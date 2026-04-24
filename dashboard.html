@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>伪科普监测系统 MVP - 运行报告</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-card: #1a2736;
+  --bg-card-hover: #1e2f42;
+  --border: #2a3f55;
+  --text-primary: #e8ecf1;
+  --text-secondary: #8899aa;
+  --text-muted: #5a6b7c;
+  --critical: #ef4444;
+  --critical-bg: rgba(239,68,68,0.12);
+  --high: #f97316;
+  --high-bg: rgba(249,115,22,0.12);
+  --medium: #eab308;
+  --medium-bg: rgba(234,179,8,0.12);
+  --low: #22c55e;
+  --low-bg: rgba(34,197,94,0.12);
+  --skip: #6b7280;
+  --skip-bg: rgba(107,114,128,0.12);
+  --accent: #3b82f6;
+  --accent-bg: rgba(59,130,246,0.12);
+  --llm: #a855f7;
+  --llm-bg: rgba(168,85,247,0.12);
+  --pseudo: #ef4444;
+  --pseudo-bg: rgba(239,68,68,0.10);
+  --debunk: #22c55e;
+  --debunk-bg: rgba(34,197,94,0.10);
+  --normal-sci: #3b82f6;
+  --normal-sci-bg: rgba(59,130,246,0.10);
+  --nonsci: #6b7280;
+  --nonsci-bg: rgba(107,114,128,0.10);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 24px 20px; }
+.header {
+  text-align: center;
+  padding: 48px 20px 36px;
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+.header h1 {
+  font-size: 32px; font-weight: 700;
+  background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+.header .subtitle {
+  color: var(--text-secondary); font-size: 15px; margin-top: 8px;
+}
+.header .badge-row {
+  display: flex; gap: 12px; justify-content: center; margin-top: 16px; flex-wrap: wrap;
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 14px; border-radius: 20px; font-size: 13px;
+  background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(59,130,246,0.25);
+}
+.badge.llm { background: var(--llm-bg); color: var(--llm); border-color: rgba(168,85,247,0.25); }
+.section { margin-top: 40px; }
+.section-title {
+  font-size: 20px; font-weight: 600; margin-bottom: 20px;
+  padding-left: 14px; border-left: 3px solid var(--accent);
+  display: flex; align-items: center; gap: 10px;
+}
+.section-title .icon { font-size: 22px; }
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.kpi-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+.kpi-number {
+  font-size: 42px; font-weight: 800;
+  line-height: 1.1;
+}
+.kpi-label {
+  font-size: 14px; color: var(--text-secondary); margin-top: 6px;
+}
+.kpi-sub {
+  font-size: 12px; color: var(--text-muted); margin-top: 4px;
+}
+.kpi-card.critical .kpi-number { color: var(--critical); }
+.kpi-card.high .kpi-number { color: var(--high); }
+.kpi-card.accent .kpi-number { color: var(--accent); }
+.kpi-card.green .kpi-number { color: var(--low); }
+.kpi-card.pseudo .kpi-number { color: var(--pseudo); }
+.kpi-card.debunk-card .kpi-number { color: var(--debunk); }
+.kpi-card.normal-card .kpi-number { color: var(--normal-sci); }
+
+/* Content type distribution cards */
+.ct-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 768px) { .ct-grid { grid-template-columns: repeat(2, 1fr); } }
+.ct-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+.ct-card:hover { transform: translateY(-2px); }
+.ct-card .ct-icon { font-size: 28px; }
+.ct-card .ct-num { font-size: 36px; font-weight: 800; margin: 4px 0; }
+.ct-card .ct-label { font-size: 14px; color: var(--text-secondary); }
+.ct-card .ct-pct { font-size: 12px; color: var(--text-muted); }
+.ct-card.pseudo { border-color: rgba(239,68,68,0.3); }
+.ct-card.pseudo .ct-num { color: var(--pseudo); }
+.ct-card.debunk { border-color: rgba(34,197,94,0.3); }
+.ct-card.debunk .ct-num { color: var(--debunk); }
+.ct-card.normal { border-color: rgba(59,130,246,0.3); }
+.ct-card.normal .ct-num { color: var(--normal-sci); }
+.ct-card.nonsci { border-color: rgba(107,114,128,0.3); }
+.ct-card.nonsci .ct-num { color: var(--nonsci); }
+
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .compare-grid { grid-template-columns: 1fr; } }
+.compare-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.compare-card h3 {
+  font-size: 16px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.compare-card .version-tag {
+  padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 600;
+}
+.v1-tag { background: var(--skip-bg); color: var(--skip); }
+.v3-tag { background: var(--accent-bg); color: var(--accent); }
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-label { width: 110px; font-size: 13px; text-align: right; color: var(--text-secondary); flex-shrink: 0; }
+.bar-track { flex: 1; height: 28px; background: rgba(255,255,255,0.04); border-radius: 6px; position: relative; overflow: hidden; }
+.bar-fill {
+  height: 100%; border-radius: 6px;
+  display: flex; align-items: center; padding-left: 10px;
+  font-size: 12px; font-weight: 600; color: #fff;
+  transition: width 0.8s ease;
+  min-width: fit-content;
+}
+.bar-fill.critical { background: linear-gradient(90deg, var(--critical), #dc2626); }
+.bar-fill.high { background: linear-gradient(90deg, var(--high), #ea580c); }
+.bar-fill.medium { background: linear-gradient(90deg, var(--medium), #ca8a04); }
+.bar-fill.low { background: linear-gradient(90deg, var(--low), #16a34a); }
+.bar-fill.skip { background: linear-gradient(90deg, var(--skip), #4b5563); }
+.bar-fill.pseudo { background: linear-gradient(90deg, var(--pseudo), #dc2626); }
+.bar-fill.debunk { background: linear-gradient(90deg, var(--debunk), #16a34a); }
+.bar-fill.normal-sci { background: linear-gradient(90deg, var(--normal-sci), #2563eb); }
+.bar-fill.nonsci { background: linear-gradient(90deg, var(--nonsci), #4b5563); }
+.bar-value { font-size: 13px; font-weight: 600; width: 50px; text-align: left; flex-shrink: 0; }
+.improvements {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px;
+}
+.improve-badge {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+  flex: 1; min-width: 160px;
+}
+.improve-badge .num { font-size: 28px; font-weight: 800; }
+.improve-badge .num.up { color: var(--low); }
+.improve-badge .num.down { color: var(--critical); }
+.improve-badge .num.purple { color: var(--llm); }
+.improve-badge .desc { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+/* Donut */
+.donut-container { display: flex; align-items: center; gap: 40px; justify-content: center; flex-wrap: wrap; }
+.donut-wrapper { position: relative; width: 220px; height: 220px; }
+.donut-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  text-align: center;
+}
+.donut-center .total { font-size: 36px; font-weight: 800; color: var(--text-primary); }
+.donut-center .label { font-size: 12px; color: var(--text-secondary); }
+.donut-legend { display: flex; flex-direction: column; gap: 10px; }
+.legend-item { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+.legend-value { font-weight: 600; margin-left: auto; min-width: 80px; text-align: right; }
+
+/* Case cards */
+.case-group { margin-top: 16px; }
+.case-group-title {
+  font-size: 15px; font-weight: 600; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.case-count { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+details.case-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+details.case-card:hover { border-color: var(--text-muted); }
+details.case-card[open] { border-color: var(--accent); }
+details.case-card.border-critical { border-left: 3px solid var(--critical); }
+details.case-card.border-high { border-left: 3px solid var(--high); }
+details.case-card.border-medium { border-left: 3px solid var(--medium); }
+details.case-card.border-low { border-left: 3px solid var(--low); }
+summary.case-summary {
+  padding: 14px 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  list-style: none;
+  user-select: none;
+}
+summary.case-summary::-webkit-details-marker { display: none; }
+summary.case-summary::before {
+  content: '▸'; font-size: 14px; color: var(--text-muted);
+  transition: transform 0.2s;
+}
+details.case-card[open] > summary.case-summary::before { transform: rotate(90deg); }
+.severity-badge {
+  padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; flex-shrink: 0;
+}
+.severity-badge.critical { background: var(--critical-bg); color: var(--critical); }
+.severity-badge.high { background: var(--high-bg); color: var(--high); }
+.severity-badge.medium { background: var(--medium-bg); color: var(--medium); }
+.severity-badge.low { background: var(--low-bg); color: var(--low); }
+.severity-badge.none { background: var(--skip-bg); color: var(--skip); }
+.ct-badge-sm {
+  padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600;
+  flex-shrink: 0;
+}
+.ct-badge-sm.pseudoscience { background: var(--pseudo-bg); color: var(--pseudo); }
+.ct-badge-sm.debunking { background: var(--debunk-bg); color: var(--debunk); }
+.ct-badge-sm.normal_science { background: var(--normal-sci-bg); color: var(--normal-sci); }
+.ct-badge-sm.non_science { background: var(--nonsci-bg); color: var(--nonsci); }
+.case-user { color: var(--accent); font-weight: 500; flex-shrink: 0; }
+.case-text-preview { color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case-score { color: var(--text-muted); font-size: 12px; flex-shrink: 0; }
+.case-detail {
+  padding: 0 18px 18px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+}
+.case-detail .full-text {
+  background: rgba(255,255,255,0.03);
+  padding: 12px; border-radius: 8px; margin: 12px 0;
+  line-height: 1.7; color: var(--text-primary);
+}
+.case-detail .meta-row {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;
+}
+.case-detail .meta-tag {
+  padding: 3px 10px; border-radius: 6px; font-size: 12px;
+  background: rgba(255,255,255,0.05); color: var(--text-secondary);
+}
+.llm-badge {
+  background: var(--llm-bg); color: var(--llm); border: 1px solid rgba(168,85,247,0.25);
+  padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+}
+
+/* Flip cards */
+.flip-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--llm);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.flip-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.flip-arrow { font-size: 18px; font-weight: 700; }
+.flip-arrow.upgrade { color: var(--critical); }
+.flip-arrow.downgrade { color: var(--low); }
+.flip-reasoning {
+  background: rgba(168,85,247,0.06);
+  border: 1px solid rgba(168,85,247,0.15);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  line-height: 1.7;
+}
+.flip-reasoning::before {
+  content: '🤖 LLM推理:';
+  color: var(--llm);
+  font-weight: 600;
+}
+
+/* Piyao */
+.piyao-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.piyao-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  display: flex; align-items: center; gap: 10px;
+}
+.piyao-item .dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--low);
+}
+.piyao-item .title { color: var(--text-primary); }
+.piyao-item .expert { color: var(--text-muted); font-size: 12px; margin-left: auto; flex-shrink: 0; }
+
+/* Pipeline */
+.pipeline {
+  display: flex; align-items: center; gap: 0;
+  overflow-x: auto; padding: 20px 0;
+  justify-content: center; flex-wrap: wrap;
+}
+.pipe-node {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 24px;
+  text-align: center;
+  min-width: 140px;
+  position: relative;
+}
+.pipe-node .pipe-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.pipe-node .pipe-count { font-size: 22px; font-weight: 800; color: var(--accent); margin-top: 4px; }
+.pipe-node .pipe-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.pipe-arrow {
+  font-size: 24px; color: var(--text-muted); padding: 0 8px; flex-shrink: 0;
+}
+
+/* Detail button */
+.detail-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), #6366f1);
+  color: #fff; font-size: 15px; font-weight: 600;
+  text-decoration: none; border: none; cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+}
+.detail-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(59,130,246,0.4);
+}
+
+.plan-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;
+}
+.plan-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.plan-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.plan-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+.matrix-table {
+  width: 100%; border-collapse: separate; border-spacing: 2px;
+  font-size: 13px;
+}
+.matrix-table th {
+  padding: 8px; text-align: center; font-weight: 500; color: var(--text-secondary); font-size: 12px;
+}
+.matrix-table td {
+  padding: 10px; text-align: center; border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+}
+.matrix-table td.highlight { font-weight: 700; }
+.matrix-table .row-header { text-align: right; font-weight: 500; color: var(--text-secondary); background: transparent; }
+
+.hidden { display: none !important; }
+
+footer {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 60px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>伪科普监测系统 MVP - 运行报告</h1>
+  <div class="subtitle">2026-04-24 · 微博 + 科学辟谣网站 · 引擎 v3(修复版) 双层分类体系</div>
+  <div class="badge-row">
+    <span class="badge">📡 微博移动端 Playwright采集</span>
+    <span class="badge">📚 科普中国辟谣知识库</span>
+    <span class="badge llm">🤖 智谱 GLM-4-Flash LLM</span>
+    <span class="badge" style="background:var(--pseudo-bg);color:var(--pseudo);border-color:rgba(239,68,68,0.25)">v3 content_type 分类</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- DETAIL LINK -->
+<div style="text-align:center;margin-top:24px;">
+  <a href="detail.html" class="detail-btn">📋 查看明细 - 全量435条逐条核查 →</a>
+</div>
+
+<!-- 1. KPI CARDS -->
+<div class="section">
+  <div class="section-title"><span class="icon">📊</span> 核心指标</div>
+  <div class="kpi-grid">
+    <div class="kpi-card accent">
+      <div class="kpi-number">435</div>
+      <div class="kpi-label">采集总量</div>
+      <div class="kpi-sub">10个关键词 × ~43条/词</div>
+    </div>
+    <div class="kpi-card pseudo">
+      <div class="kpi-number">21</div>
+      <div class="kpi-label">伪科普 PSEUDOSCIENCE</div>
+      <div class="kpi-sub">HIGH 18 + MEDIUM 3</div>
+    </div>
+    <div class="kpi-card debunk-card">
+      <div class="kpi-number">27</div>
+      <div class="kpi-label">辟谣内容 DEBUNKING</div>
+      <div class="kpi-sub">规则检出 32 条辟谣帖</div>
+    </div>
+    <div class="kpi-card normal-card">
+      <div class="kpi-number">308</div>
+      <div class="kpi-label">正常科普 NORMAL_SCIENCE</div>
+      <div class="kpi-sub">占比 70.8%</div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. V3 CONTENT TYPE DISTRIBUTION -->
+<div class="section">
+  <div class="section-title"><span class="icon">🎯</span> v3 内容分类分布</div>
+  <div class="ct-grid">
+    <div class="ct-card pseudo">
+      <div class="ct-icon">🔴</div>
+      <div class="ct-num">21</div>
+      <div class="ct-label">伪科普/谣言</div>
+      <div class="ct-pct">4.8%</div>
+    </div>
+    <div class="ct-card debunk">
+      <div class="ct-icon">🟢</div>
+      <div class="ct-num">27</div>
+      <div class="ct-label">辟谣内容</div>
+      <div class="ct-pct">6.2%</div>
+    </div>
+    <div class="ct-card normal">
+      <div class="ct-icon">🔵</div>
+      <div class="ct-num">308</div>
+      <div class="ct-label">正常科普</div>
+      <div class="ct-pct">70.8%</div>
+    </div>
+    <div class="ct-card nonsci">
+      <div class="ct-icon">⚪</div>
+      <div class="ct-num">79</div>
+      <div class="ct-label">非科学内容</div>
+      <div class="ct-pct">18.2%</div>
+    </div>
+  </div>
+
+  <!-- Donut chart -->
+  <div class="compare-card" style="margin-top:20px;">
+    <div class="donut-container">
+      <div class="donut-wrapper">
+        <svg viewBox="0 0 120 120" width="220" height="220">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--pseudo)" stroke-width="16"
+            stroke-dasharray="15.2 299.0" stroke-dashoffset="78.5" transform="rotate(-90 60 60)"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--debunk)" stroke-width="16"
+            stroke-dasharray="19.5 294.7" stroke-dashoffset="63.3" transform="rotate(-90 60 60)"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--normal-sci)" stroke-width="16"
+            stroke-dasharray="222.4 91.8" stroke-dashoffset="43.8" transform="rotate(-90 60 60)"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--nonsci)" stroke-width="16"
+            stroke-dasharray="57.1 257.1" stroke-dashoffset="-178.6" transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="donut-center">
+          <div class="total">435</div>
+          <div class="label">总条数</div>
+        </div>
+      </div>
+      <div class="donut-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--pseudo)"></div>
+          <span>伪科普 PSEUDOSCIENCE</span>
+          <span class="legend-value" style="color:var(--pseudo)">21 (4.8%)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--debunk)"></div>
+          <span>辟谣 DEBUNKING</span>
+          <span class="legend-value" style="color:var(--debunk)">27 (6.2%)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--normal-sci)"></div>
+          <span>正常科普 NORMAL_SCIENCE</span>
+          <span class="legend-value" style="color:var(--normal-sci)">308 (70.8%)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--nonsci)"></div>
+          <span>非科学 NON_SCIENCE</span>
+          <span class="legend-value" style="color:var(--nonsci)">79 (18.2%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. V1 VS V3 COMPARISON -->
+<div class="section">
+  <div class="section-title"><span class="icon">⚡</span> v1 vs v3 引擎对比</div>
+
+  <div class="compare-grid">
+    <!-- V1 -->
+    <div class="compare-card">
+      <h3><span class="version-tag v1-tag">v1 原版</span> 风险等级分布(仅severity)</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <span class="bar-label">CRITICAL</span>
+          <div class="bar-track"><div class="bar-fill critical" style="width:1.0%">0</div></div>
+          <span class="bar-value" style="color:var(--critical)">0</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">HIGH</span>
+          <div class="bar-track"><div class="bar-fill high" style="width:1.0%">1</div></div>
+          <span class="bar-value" style="color:var(--high)">1</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">MEDIUM</span>
+          <div class="bar-track"><div class="bar-fill medium" style="width:7.8%">34</div></div>
+          <span class="bar-value" style="color:var(--medium)">34</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">LOW</span>
+          <div class="bar-track"><div class="bar-fill low" style="width:75.2%">327</div></div>
+          <span class="bar-value" style="color:var(--low)">327</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">SKIP</span>
+          <div class="bar-track"><div class="bar-fill skip" style="width:16.8%">73</div></div>
+          <span class="bar-value" style="color:var(--skip)">73</span>
+        </div>
+      </div>
+    </div>
+    <!-- V3 -->
+    <div class="compare-card">
+      <h3><span class="version-tag v3-tag">v3 重构版</span> 内容分类分布(content_type)</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <span class="bar-label">🔴 伪科普</span>
+          <div class="bar-track"><div class="bar-fill pseudo" style="width:4.8%">21</div></div>
+          <span class="bar-value" style="color:var(--pseudo)">21</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">🟢 辟谣</span>
+          <div class="bar-track"><div class="bar-fill debunk" style="width:6.2%">27</div></div>
+          <span class="bar-value" style="color:var(--debunk)">27</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">🔵 正常科普</span>
+          <div class="bar-track"><div class="bar-fill normal-sci" style="width:70.8%">308</div></div>
+          <span class="bar-value" style="color:var(--normal-sci)">308</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">⚪ 非科学</span>
+          <div class="bar-track"><div class="bar-fill nonsci" style="width:18.2%">79</div></div>
+          <span class="bar-value" style="color:var(--nonsci)">79</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key improvements -->
+  <div class="improvements">
+    <div class="improve-badge">
+      <div class="num down" style="font-size:22px;">v1→v3</div>
+      <div class="desc">分类体系重构<br>单severity → content_type + severity</div>
+    </div>
+    <div class="improve-badge">
+      <div class="num purple">70</div>
+      <div class="desc">LLM调用次数(16.1%数据)</div>
+    </div>
+    <div class="improve-badge">
+      <div class="num purple">47</div>
+      <div class="desc">LLM翻转判定<br>⬆️22 ⬇️20</div>
+    </div>
+    <div class="improve-badge">
+      <div class="num up">32</div>
+      <div class="desc">辟谣帖独立识别<br>不再混入LOW</div>
+    </div>
+    <div class="improve-badge">
+      <div class="num up">308</div>
+      <div class="desc">正常科普独立分类<br>不再被标为"低风险"</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. PSEUDOSCIENCE CASES -->
+<div class="section">
+  <div class="section-title"><span class="icon">🔴</span> 伪科普/谣言案例(PSEUDOSCIENCE)<span style="font-size:14px;color:var(--text-muted);font-weight:400;margin-left:8px;">共21条(已修正8条误判)</span></div>
+  <div class="case-group">
+    <details class="case-card border-high" data-severity="high" data-ct="pseudoscience">
+<summary class="case-summary">
+  <span class="severity-badge high">HIGH</span>
+  <span class="ct-badge-sm pseudoscience">PSEUDOSCIENCE</span>
+  <span class="case-user">@低级黑小明</span>
+  <span class="case-text-preview">现在所谓的科学界搞出很多药物,什么hpv的疫苗,艾滋病预防药,癌症疫苗,这些药都是没用的,而且反而会对身体有害,不要轻信这些药物厂的宣传,也不要以为自己打了针吃...</span>
+  <span class="case-score">4.0/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">现在所谓的科学界搞出很多药物,什么hpv的疫苗,艾滋病预防药,癌症疫苗,这些药都是没用的,而且反而会对身体有害,不要轻信这些药物厂的宣传,也不要以为自己打了针吃了药就可以随便乱性没有后果,这是一个骗局,目的为了诱导更多的人堕落,最后你出事了药厂和医院再从你身上赚一笔你也没有办法。</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:认知误区</span>
+    <span class="meta-tag">195,000粉丝</span>
+    <span class="meta-tag">R4 因果简化+绝对化</span>
+    <span class="llm-badge">LLM: 伪科普 (conf=0.9)</span>
+  </div>
+</div>
+</details>
+<details class="case-card border-high" data-severity="high" data-ct="pseudoscience">
+<summary class="case-summary">
+  <span class="severity-badge high">HIGH</span>
+  <span class="ct-badge-sm pseudoscience">PSEUDOSCIENCE</span>
+  <span class="case-user">@张鹤瑶中医养生</span>
+  <span class="case-text-preview">这样敲手臂,坚持15天后,各种奇迹发生了一个人的体内毒素越少,人就越健康、越长寿、越不容易衰老。所有我们必须把,不需要的、过剩的、对人体有伤害的毒素,排出体外!...</span>
+  <span class="case-score">3.85/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">这样敲手臂,坚持15天后,各种奇迹发生了一个人的体内毒素越少,人就越健康、越长寿、越不容易衰老。所有我们必须把,不需要的、过剩的、对人体有伤害的毒素,排出体外!人体有一条专门排毒的通道,它就在手臂上,每天敲一敲,坚持15天后,有人皮肤好了,腰变细了,人变瘦了,肠道通了,便秘好了! ...全文</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:待定</span>
+    <span class="meta-tag">2,153,000粉丝</span>
+    <span class="meta-tag">R1 恐惧营销模式(无营销词)</span>
+    <span class="llm-badge">LLM: 伪科普 (conf=0.7)</span>
+  </div>
+</div>
+</details>
+<details class="case-card border-high" data-severity="high" data-ct="pseudoscience">
+<summary class="case-summary">
+  <span class="severity-badge high">HIGH</span>
+  <span class="ct-badge-sm pseudoscience">PSEUDOSCIENCE</span>
+  <span class="case-user">@武汉刘正涛</span>
+  <span class="case-text-preview">直播间兄弟们的感受,大家的体感,只要我挥动手,大家就会感觉到一股强大的气流在身体里面转动,跟着我的手势在流动,这就是神奇量子纠缠的力量。在直播间,隔着手机屏幕,...</span>
+  <span class="case-score">3.2/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">直播间兄弟们的感受,大家的体感,只要我挥动手,大家就会感觉到一股强大的气流在身体里面转动,跟着我的手势在流动,这就是神奇量子纠缠的力量。在直播间,隔着手机屏幕,你都能感受到强大的力量加持身体,疏通身体里面的瘀堵,调节身体健康。如若不是亲身经历,一定觉得这是神话,世 ...全文</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:伪科普 / 营销属性</span>
+    <span class="meta-tag">3,508,000粉丝</span>
+    <span class="meta-tag">无规则触发</span>
+    <span class="llm-badge">LLM: 伪科普 (conf=0.9)</span>
+  </div>
+</div>
+</details>
+<details class="case-card border-high" data-severity="high" data-ct="pseudoscience">
+<summary class="case-summary">
+  <span class="severity-badge high">HIGH</span>
+  <span class="ct-badge-sm pseudoscience">PSEUDOSCIENCE</span>
+  <span class="case-user">@航·空</span>
+  <span class="case-text-preview">富豪圈都在流行的"干细胞输注",真能抗衰么?有钱人的游戏2026-03-31 17:44:56 来源: 网易健康 北京如今,富豪圈正流行一种 "干细胞回输" 疗...</span>
+  <span class="case-score">2.62/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">富豪圈都在流行的"干细胞输注",真能抗衰么?有钱人的游戏2026-03-31 17:44:56 来源: 网易健康 北京如今,富豪圈正流行一种 "干细胞回输" 疗法,简单来说就是把人体中的干细胞在体外扩增培养后,再回输进体内,据说就能将身体"一键重启",保持年轻活力。这动辄几十万一针的抗衰科技,真的靠谱 ...全文</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:新发谣言</span>
+    <span class="meta-tag">95粉丝</span>
+    <span class="meta-tag">R2 权威虚构</span>
+    <span class="llm-badge">LLM: 新发谣言 (conf=0.7)</span>
+  </div>
+</div>
+</details>
+<details class="case-card border-high" data-severity="high" data-ct="pseudoscience">
+<summary class="case-summary">
+  <span class="severity-badge high">HIGH</span>
+  <span class="ct-badge-sm pseudoscience">PSEUDOSCIENCE</span>
+  <span class="case-user">@武汉刘正涛</span>
+  <span class="case-text-preview">把孢子粉和石斛的营养,不用吃就能被身体吸收,没有听说过吧?远隔千里,在直播间,把孢子粉食补60%的营养灌进粉丝的卫气系统,不可思议的奇迹出现了......。自己看吧,这...</span>
+  <span class="case-score">1.88/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">把孢子粉和石斛的营养,不用吃就能被身体吸收,没有听说过吧?远隔千里,在直播间,把孢子粉食补60%的营养灌进粉丝的卫气系统,不可思议的奇迹出现了......。自己看吧,这个世界很多东西,你不懂的,不代表他不存在......。比如手机的信号,你能看得到吗?他却能让你远隔千里,沟通无障碍...... ...全文</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:新发谣言</span>
+    <span class="meta-tag">3,508,000粉丝</span>
+    <span class="meta-tag">R2 权威虚构</span>
+    <span class="llm-badge">LLM: 伪科普 (conf=0.8)</span>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+
+<!-- 5. DEBUNKING CASES -->
+<div class="section">
+  <div class="section-title"><span class="icon">🟢</span> 辟谣内容(DEBUNKING)<span style="font-size:14px;color:var(--text-muted);font-weight:400;margin-left:8px;">共27条</span></div>
+  <div class="case-group">
+    <details class="case-card border-low" data-severity="none" data-ct="debunking">
+<summary class="case-summary">
+  <span class="severity-badge none">NONE</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="case-user">@松鼠举栗子0214</span>
+  <span class="case-text-preview">#空气炸锅烹饪食物会致癌的真相#别再被谣言吓!空气炸锅本身不致癌,它就是个带风扇的小烤箱￼￼￼。真正的风险是高温过度加热￼￼￼:• 淀粉类(土豆、红薯)超120...</span>
+  <span class="case-score">1.5/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">#空气炸锅烹饪食物会致癌的真相#别再被谣言吓!空气炸锅本身不致癌,它就是个带风扇的小烤箱￼￼￼。真正的风险是高温过度加热￼￼￼:• 淀粉类(土豆、红薯)超120°C易产生丙烯酰胺(2A类致癌物)• 肉类高温久烤会出杂环胺￼￼￼• 但空气炸比油炸更健康:丙烯酰胺少约90%、油脂更低✅ 安全 ...全文</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:认知误区</span>
+    <span class="meta-tag">12,000粉丝</span>
+    <span class="meta-tag">无规则触发</span>
+    <span class="llm-badge">LLM: 辟谣内容 (conf=0.9)</span>
+  </div>
+</div>
+</details>
+<details class="case-card border-low" data-severity="none" data-ct="debunking">
+<summary class="case-summary">
+  <span class="severity-badge none">NONE</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="case-user">@喝美式不加冰u</span>
+  <span class="case-text-preview">#空气炸锅烹饪食物会致癌的真相#"空气炸锅致癌"?先别急着扔锅!真相是:致癌的不是锅,是高温!只要温度超过120°C,淀粉类食物(土豆、红薯)就会产生丙烯酰胺,不...</span>
+  <span class="case-score">0.75/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">#空气炸锅烹饪食物会致癌的真相#"空气炸锅致癌"?先别急着扔锅!真相是:致癌的不是锅,是高温!只要温度超过120°C,淀粉类食物(土豆、红薯)就会产生丙烯酰胺,不管你是用空气炸锅、烤箱还是油炸,都逃不掉。使用注意这些:温度设低一点(160-180度足矣)勤翻面,受热更均匀看到颜色金黄就 ...全文</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:待定</span>
+    <span class="meta-tag">1,612粉丝</span>
+    <span class="meta-tag">无规则触发</span>
+    <span class="llm-badge">LLM: 辟谣内容 (conf=0.9)</span>
+  </div>
+</div>
+</details>
+<details class="case-card border-low" data-severity="none" data-ct="debunking">
+<summary class="case-summary">
+  <span class="severity-badge none">NONE</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="case-user">@青海锦铭</span>
+  <span class="case-text-preview">【我妈被保健品骗了十几万,我用这招让她"脱坑"】真的崩溃,我妈这几年沉迷各种"养生神物":量子水杯、负离子项链、磁疗床垫...家里堆成山,钱花了不下十几万。劝也劝不...</span>
+  <span class="case-score">3.75/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">【我妈被保健品骗了十几万,我用这招让她"脱坑"】真的崩溃,我妈这几年沉迷各种"养生神物":量子水杯、负离子项链、磁疗床垫...家里堆成山,钱花了不下十几万。劝也劝不听,说就是"你不懂""专家说了好"。后来我终于找到办法"治"了--直接给她报了公共营养师培训班。她一开始是抗拒的,但 ...全文</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:伪科普 / 营销属性</span>
+    <span class="meta-tag">2粉丝</span>
+    <span class="meta-tag">无规则触发</span>
+    <span class="llm-badge">LLM: 辟谣内容 (conf=0.7)</span>
+  </div>
+</div>
+</details>
+<details class="case-card border-low" data-severity="none" data-ct="debunking">
+<summary class="case-summary">
+  <span class="severity-badge none">NONE</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="case-user">@淮安感染肝病顾生旺主任</span>
+  <span class="case-text-preview">#健闻登顶计划##专家辟谣:黄连素≠减肥神药!几块钱的止泻药,别拿健康乱试# 专家辟谣:黄连素≠减肥神药!几块钱的止泻药,别拿健康乱试 淮安感染肝病 顾生旺主任...</span>
+  <span class="case-score">0.0/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">#健闻登顶计划##专家辟谣:黄连素≠减肥神药!几块钱的止泻药,别拿健康乱试# 专家辟谣:黄连素≠减肥神药!几块钱的止泻药,别拿健康乱试 淮安感染肝病 顾生旺主任近期,廉价中成药黄连素被捧上"减肥神药"神坛,号称"天然减脂、不反弹",甚至被吹嘘成"平价替代司美格鲁肽"。但国内内分泌 ...全文</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:待定</span>
+    <span class="meta-tag">100,000粉丝</span>
+    <span class="meta-tag">无规则触发</span>
+    <span class="llm-badge">LLM: 辟谣内容 (conf=0.9)</span>
+  </div>
+</div>
+</details>
+<details class="case-card border-low" data-severity="none" data-ct="debunking">
+<summary class="case-summary">
+  <span class="severity-badge none">NONE</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="case-user">@兔子警官ouo</span>
+  <span class="case-text-preview">节目现场争吵升级,民间偏方能治病嘛... 兔子警官ouo的微博视频</span>
+  <span class="case-score">1.88/10</span>
+</summary>
+<div class="case-detail">
+  <div class="full-text">节目现场争吵升级,民间偏方能治病嘛... 兔子警官ouo的微博视频</div>
+  <div class="meta-row">
+    <span class="meta-tag">分类:新发谣言</span>
+    <span class="meta-tag">136,000粉丝</span>
+    <span class="meta-tag">R2 权威虚构</span>
+    <span class="llm-badge">LLM: 辟谣内容 (conf=0.7)</span>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+
+<!-- 6. LLM FLIP CASES -->
+<div class="section">
+  <div class="section-title"><span class="icon">🤖</span> LLM翻转案例专区 <span style="font-size:14px;color:var(--text-muted);font-weight:400;margin-left:8px;">共47条</span></div>
+
+  <div style="margin-bottom:20px;">
+    <div class="case-group-title" style="color:var(--critical)">⬆️ 升级案例 <span class="case-count">规则偏低 → LLM调高(22条)</span></div>
+    <!-- 注:v3修复版中,LLM翻转共47条(⬆️22 ⬇️20 + 其他重分类5) -->
+    <div class="flip-card">
+<div class="flip-header">
+  <span class="severity-badge medium">MEDIUM</span>
+  <span class="flip-arrow upgrade">→</span>
+  <span class="severity-badge high">HIGH</span>
+  <span class="llm-badge">🤖 LLM翻转</span>
+  <span class="case-user">@银教授</span>
+</div>
+<div class="full-text" style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;font-size:13px;line-height:1.7;">食物其实是一种致癌物,剂量摄入过多,脂肪细胞就无限繁殖。大家还是少摄入吧,以免得胖癌。</div>
+<div class="flip-reasoning">该内容将食物描述为致癌物,并错误地关联了脂肪细胞繁殖与胖癌,属于典型的伪科学表述。</div>
+</div>
+<div class="flip-card">
+<div class="flip-header">
+  <span class="severity-badge medium">MEDIUM</span>
+  <span class="flip-arrow upgrade">→</span>
+  <span class="severity-badge high">HIGH</span>
+  <span class="llm-badge">🤖 LLM翻转</span>
+  <span class="case-user">@海淀区万寿路健康教育</span>
+</div>
+<div class="full-text" style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;font-size:13px;line-height:1.7;">【防癌抗癌】器官最怕的致癌吃法,癌症可能是你亲口"喂"出来的肝脏:发霉食物和酗酒研究表明,发霉的食物常被霉菌污染,产生有致癌作用的霉菌毒素(如黄曲霉毒素),对肝脏的伤害最大,极易诱发肝癌。但是在很多人眼里,现在经济条件好了,发霉的食物离我们很远。其实不然,在梅雨季节的江南、常 ...全文</div>
+<div class="flip-reasoning">内容中提到发霉食物和酗酒与肝癌的关系,虽然提到了科学概念,但表述过于绝对,且未提供足够的科学证据支持,存在误导性。</div>
+</div>
+<div class="flip-card">
+<div class="flip-header">
+  <span class="severity-badge medium">MEDIUM</span>
+  <span class="flip-arrow upgrade">→</span>
+  <span class="severity-badge high">HIGH</span>
+  <span class="llm-badge">🤖 LLM翻转</span>
+  <span class="case-user">@武汉刘正涛</span>
+</div>
+<div class="full-text" style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;font-size:13px;line-height:1.7;">直播间兄弟们的感受,大家的体感,只要我挥动手,大家就会感觉到一股强大的气流在身体里面转动,跟着我的手势在流动,这就是神奇量子纠缠的力量。在直播间,隔着手机屏幕,你都能感受到强大的力量加持身体,疏通身体里面的瘀堵,调节身体健康。如若不是亲身经历,一定觉得这是神话,世 ...全文</div>
+<div class="flip-reasoning">内容描述了通过量子纠缠进行身体疏通和调节健康的说法,属于典型的伪科学概念,且没有科学依据。</div>
+</div>
+  </div>
+
+  <div>
+    <div class="case-group-title" style="color:var(--low)">⬇️ 降级案例 <span class="case-count">规则偏高 → LLM纠正(20条,展示5条典型)</span></div>
+    <div class="flip-card">
+<div class="flip-header">
+  <span class="severity-badge medium">MEDIUM</span>
+  <span class="flip-arrow downgrade">→</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="llm-badge">🤖 LLM翻转</span>
+  <span class="case-user">@青海锦铭</span>
+</div>
+<div class="full-text" style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;font-size:13px;line-height:1.7;">【我妈被保健品骗了十几万,我用这招让她"脱坑"】真的崩溃,我妈这几年沉迷各种"养生神物":量子水杯、负离子项链、磁疗床垫...家里堆成山,钱花了不下十几万。劝也劝不听,说就是"你不懂""专家说了好"。后来我终于找到办法"治"了--直接给她报了公共营养师培训班。她一开始是抗拒的,但 ...全文</div>
+<div class="flip-reasoning">内容描述了如何帮助家人摆脱对保健品的错误认知,并提到了公共营养师培训班,表明作者在尝试纠正错误信息,属于辟谣内容。</div>
+</div>
+<div class="flip-card">
+<div class="flip-header">
+  <span class="severity-badge medium">MEDIUM</span>
+  <span class="flip-arrow downgrade">→</span>
+  <span class="ct-badge-sm normal_science">NORMAL_SCIENCE</span>
+  <span class="llm-badge">🤖 LLM翻转</span>
+  <span class="case-user">@这里有读</span>
+</div>
+<div class="full-text" style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;font-size:13px;line-height:1.7;">【老祖宗留下的100个治病秘方】 第一辑 01.千保健,万保健,心态平衡是关键。 02.怒伤肝,喜伤心,悲忧惊恐伤命根。 03.要活好,心别小; 善制怒,寿无数。 04.心胸宽大能撑船,健康长寿过百年。 05.要想健康快活,学会自己找乐。 06.妻贤夫病少,好妻胜良药。 07. ...全文</div>
+<div class="flip-reasoning">内容主要涉及健康生活的建议和心态调整,没有涉及科学概念滥用或伪科学元素。</div>
+</div>
+<div class="flip-card">
+<div class="flip-header">
+  <span class="severity-badge medium">MEDIUM</span>
+  <span class="flip-arrow downgrade">→</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="llm-badge">🤖 LLM翻转</span>
+  <span class="case-user">@兔子警官ouo</span>
+</div>
+<div class="full-text" style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;font-size:13px;line-height:1.7;">节目现场争吵升级,民间偏方能治病嘛... 兔子警官ouo的微博视频</div>
+<div class="flip-reasoning">内容提到了'民间偏方能治病'这一可能存在伪科学概念的话题,并提到了'节目现场争吵升级',暗示可能存在对民间偏方的错误认知或传播,同时规则引擎触发了权威虚构的规则,表明内容可能是在辟谣或澄清,因此判断为DEBUNKING。</div>
+</div>
+<div class="flip-card">
+<div class="flip-header">
+  <span class="severity-badge medium">MEDIUM</span>
+  <span class="flip-arrow downgrade">→</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="llm-badge">🤖 LLM翻转</span>
+  <span class="case-user">@海淀区万寿路健康教育</span>
+</div>
+<div class="full-text" style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;font-size:13px;line-height:1.7;">确诊莫慌张,科学诊疗记住 "三板斧"1.信科学,别信"神医":马上去正规大医院,找专科医生。千万不要相信什么"祖传秘方""偏方神药",耽误了正规治疗,人财两空。2.听"多学科"团队的:现在好医院都有"多学科会诊",外科、内科、放疗科、影像科的专家坐在一起,为你商量出一个最适合你的方 ...全文</div>
+<div class="flip-reasoning">内容明确指出不要相信非正规的治疗方法,强调正规医院和多学科团队的重要性,属于对错误治疗观念的辟谣。</div>
+</div>
+<div class="flip-card">
+<div class="flip-header">
+  <span class="severity-badge high">HIGH</span>
+  <span class="flip-arrow downgrade">→</span>
+  <span class="ct-badge-sm debunking">DEBUNKING</span>
+  <span class="llm-badge">🤖 LLM翻转</span>
+  <span class="case-user">@新君乙58-</span>
+</div>
+<div class="full-text" style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;font-size:13px;line-height:1.7;">转发:10个一定要知道的健康真相1. 食物相克基本都是谣言,正常吃不会中毒。2. 清淡饮食=少油少盐少糖,不是只吃水煮菜。3. 喝红酒、喝醋都不能软化血管。4. 几块钱的维生素和几百块的效果差别不大。5. 医学上没有"宿便",都是商家噱头。6. 糖尿病、静脉曲张、心脑血管不好的人,别乱热 ...全文</div>
+<div class="flip-reasoning">内容明确指出多个健康谣言,如食物相克、红酒软化血管等,并对其进行辟谣,符合辟谣文章的特征。</div>
+</div>
+  </div>
+</div>
+
+<!-- 7. PIYAO KB -->
+<div class="section">
+  <div class="section-title"><span class="icon">📚</span> 辟谣知识库统计</div>
+  <div class="kpi-grid" style="margin-bottom:20px;">
+    <div class="kpi-card green">
+      <div class="kpi-number">31</div>
+      <div class="kpi-label">辟谣文章</div>
+      <div class="kpi-sub">来自科普中国·科学辟谣平台</div>
+    </div>
+    <div class="kpi-card accent">
+      <div class="kpi-number">14</div>
+      <div class="kpi-label">审核专家</div>
+      <div class="kpi-sub">注册营养师、临床医生等</div>
+    </div>
+    <div class="kpi-card" style="border-color:var(--medium);">
+      <div class="kpi-number" style="color:var(--medium)">5</div>
+      <div class="kpi-label">覆盖领域</div>
+      <div class="kpi-sub">食品安全 · 营养健康 · 疾病防治 · 生活解惑 · 宠物健康</div>
+    </div>
+  </div>
+  <details class="case-card border-low">
+    <summary class="case-summary">
+      <span style="color:var(--low);font-weight:600;">点击展开 31 篇辟谣文章标题</span>
+    </summary>
+    <div class="case-detail">
+      <div class="piyao-grid">
+        <div class="piyao-item"><span class="dot"></span><span class="title">上了年纪,应该少喝水?</span><span class="expert">薛庆鑫</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">经常吃猪油渣能防癌?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">醋吃多了,会导致骨质疏松?</span><span class="expert">李纯</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">标注"0 反式脂肪酸"的食品,更健康?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">只要补足了钙,骨骼就不会缺钙?就不会得骨质疏松了?</span><span class="expert">纪刚</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">锻炼补水,喝运动饮料比喝白开水更好吗?</span><span class="expert">阮光锋</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">水果甜是因为加了甜味素?</span><span class="expert">阮光锋</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">圣女果是转基因食品,不能吃?</span><span class="expert">李纯</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">睡前多吃点碳水,就能快速入睡?</span><span class="expert">蒋永源</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">号称"北极黄金"的海豹油能降血脂、抗炎抗衰?</span><span class="expert">王璐</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">果芯发黑的菠萝是"糖心菠萝",更好吃?</span><span class="expert">张聪</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">宠物吃生骨肉更健康?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">感冒干咳,喝点酒就能好?医生提醒:千万别!!!</span><span class="expert">范运柱</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">心脏骤停可以用硝酸甘油急救?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">突发心梗,用力拍打胸口可疏通血栓?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">儿童心脏有杂音,代表有先天性心脏病?</span><span class="expert">丁亚辉</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">白鼻涕变为黄鼻涕说明感冒变轻了?</span><span class="expert">孙益兰</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">抗结核病药很伤肝,能少吃就少吃,可以靠自身免疫力硬抗?</span><span class="expert">蒋永源</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">蓖麻籽能润肠通便,便秘时可以吃?当心中毒!</span><span class="expert">孙轶飞</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">先天性心脏病患者需要终生吃药?</span><span class="expert">蒋永源</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">先天性心脏病术后一劳永逸,无需复查?</span><span class="expert">丁亚辉</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">木耳可以用水泡久一点,这样更干净,泡得越久越软口感越好?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">三文鱼都可以生吃,只要是三文鱼就没问题?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">罐头食品有大量防腐剂,既没营养又不健康?这种说法过于片面。</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">保质期越长,防腐剂越多?</span><span class="expert">张娜</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">"左旋肉碱咖啡"可以健康减肥?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">牛肉表面发灰,是变质不能吃了?</span><span class="expert">李纯</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">速冻水饺是垃圾食品,没营养?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">虾头白线是"寄生虫"?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">长黑斑的香蕉有毒,不能吃?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">大白菜上边有小黑点,就说明菜坏了要赶紧扔掉?</span><span class="expert">科学辟谣</span></div>
+
+      </div>
+    </div>
+  </details>
+</div>
+
+<!-- 8. PIPELINE -->
+<div class="section">
+  <div class="section-title"><span class="icon">⚙️</span> v3 系统架构流程</div>
+  <div class="pipeline">
+    <div class="pipe-node" style="border-color:var(--accent)">
+      <div class="pipe-title">📡 采集层</div>
+      <div class="pipe-count">435</div>
+      <div class="pipe-desc">Playwright + Cookie<br>10个关键词 × 2页</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node" style="border-color:var(--low)">
+      <div class="pipe-title">🔍 预筛层</div>
+      <div class="pipe-count">356</div>
+      <div class="pipe-desc">涉科判定<br>过滤79条非涉科</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node" style="border-color:var(--medium)">
+      <div class="pipe-title">📏 规则引擎</div>
+      <div class="pipe-count">356</div>
+      <div class="pipe-desc">6条组合规则<br>辟谣帖检测</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node" style="border-color:var(--llm)">
+      <div class="pipe-title">🤖 LLM二次判断</div>
+      <div class="pipe-count">70</div>
+      <div class="pipe-desc">GLM-4-Flash<br>可疑内容触发</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node" style="border-color:var(--high)">
+      <div class="pipe-title">📊 四类输出</div>
+      <div class="pipe-count">21</div>
+      <div class="pipe-desc">PSEUDOSCIENCE标记<br>+ DEBUNKING 27<br>+ NORMAL 308<br>+ NON_SCI 79</div>
+    </div>
+  </div>
+</div>
+
+<!-- 9. DETAIL LINK (bottom) -->
+<div class="section" style="text-align:center;padding:40px 0;">
+  <a href="detail.html" class="detail-btn" style="font-size:18px;padding:16px 40px;">📋 查看全量435条明细核查 →</a>
+  <p style="color:var(--text-muted);font-size:13px;margin-top:12px;">逐条查看完整分析链条:原文 → 关键词命中 → 规则触发 → LLM判断 → 最终分类</p>
+</div>
+
+<!-- 10. NEXT STEPS -->
+<div class="section">
+  <div class="section-title"><span class="icon">🚀</span> 下一步计划</div>
+  <div class="plan-grid">
+    <div class="plan-card">
+      <h4>📈 传播路径分析</h4>
+      <p>追踪同一条谣言在转发链上的传播路径和裂变速度,识别"超级传播节点"账号,实现传播图谱可视化。</p>
+    </div>
+    <div class="plan-card">
+      <h4>📡 扩充数据源</h4>
+      <p>接入小红书、抖音、今日头条采集模块。扩充辟谣知识库至500+条(补充中国互联网联合辟谣平台 piyao.org.cn)。</p>
+    </div>
+    <div class="plan-card">
+      <h4>📊 周报自动化</h4>
+      <p>每周定时运行采集+分析+生成报告的全流程,输出PDF周报发送至审核团队邮箱。包含趋势图和新增谣言预警。</p>
+    </div>
+    <div class="plan-card">
+      <h4>🎯 评测集构建</h4>
+      <p>人工标注200+条真实数据,构建正式评测集,持续跟踪P/R/F1变化。目标:Precision≥90%、Recall≥80%。</p>
+    </div>
+    <div class="plan-card">
+      <h4>🔧 模型迭代</h4>
+      <p>测试更多LLM(GPT-4o、DeepSeek、Qwen),对比成本与效果。探索Fine-tune小模型替代通用LLM。</p>
+    </div>
+    <div class="plan-card">
+      <h4>👤 用户画像</h4>
+      <p>利用verified/verified_type字段区分官媒、认证博主、普通用户,为不同来源设置差异化风险权重。</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  伪科普监测系统 v3(修复版) · 2026-04-24 · 数据采集 435条 · 辟谣知识库 31篇 · LLM: 智谱GLM-4-Flash<br>
+  报告由系统自动生成 · 科普中国 · 误判修正后：21条PSEUDOSCIENCE（已纠正8条误判→NORMAL_SCIENCE/DEBUNKING/NON_SCIENCE）
+</footer>
+
+</body>
+</html>
