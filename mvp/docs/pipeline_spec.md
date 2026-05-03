@@ -439,7 +439,7 @@ data/analysis_latest.jsonl              # 合并去重后的最新全量
 辟谣文章库独立于微博采集周期更新：
 
 ```
-data/piyao_articles_{date}.jsonl        # 当次抓取的辟谣文章
+data/debunk_articles_{date}.jsonl        # 当次抓取的辟谣文章
 data/rumor_knowledge_base.json          # 累计知识库（供分析引擎比对）
 ```
 
@@ -453,7 +453,7 @@ mvp/
 │   └── pipeline_spec.md                 # 本文档
 ├── data/
 │   ├── weibo_raw_{start}_{end}.jsonl    # 原始采集（按时间窗口）
-│   ├── piyao_articles_{date}.jsonl      # 辟谣文章库（按日期）
+│   ├── debunk_articles_{date}.jsonl      # 辟谣文章库（按日期）
 │   ├── analysis_{start}_{end}.jsonl     # 分析结果（按采集批次）
 │   ├── analysis_latest.jsonl            # 合并去重后的最新全量
 │   ├── rumor_knowledge_base.json        # 谣言知识库（累计）
@@ -595,7 +595,7 @@ mvp/
 | 5 | 看板数据加载 | 硬编码嵌入 HTML | 从 `analysis_latest.jsonl` 读取 | `dashboard.html` / `detail.html` 或生成脚本 |
 | 6 | `spread_score` 字段 | 前端实时计算 | 建议在分析阶段写入 | `analyzer_v3.py` |
 | 7 | `rules_triggered.matched_keywords` | 不存在 | 规格中提及 | `analyzer_v3.py` → `apply_rules()` |
-| 8 | 辟谣文章匹配字段 | 仅知识库比对（`kb_matches`） | 需要 `is_piyao_match` + `piyao_confidence` | `analyzer_v3.py` |
+| 8 | 辟谣文章匹配字段 | 仅知识库比对（`kb_matches`） | 需要 `is_debunk_match` + `debunk_confidence` | `analyzer_v3.py` |
 
 ---
 

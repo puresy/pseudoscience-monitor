@@ -8,9 +8,9 @@
 
 ## 1. 数据来源说明
 
-### 1.1 辟谣知识库（科学辟谣网站）
+### 1.1 辟谣知识库（辟谣平台）
 
-- **来源**: `https://piyao.kepuchina.cn/`（科普中国·科学辟谣平台）
+- **来源**: `https://example.com/debunk/`（公开辟谣平台平台）
 - **采集方式**: 双通道 — JSON API (`/index/rumor`) + HTML 列表页 (`/rumor/rumorlist?type=N`)
 - **采集参数**: `--max-pages 3`（3个领域分类 + API通道）
 - **结果**: **成功抓取 31 篇辟谣文章**，含标题、正文、专家、关键词等
@@ -34,7 +34,7 @@
 
 | 数据集 | 文件 | 条数 |
 |-------|------|------|
-| 辟谣知识库原文 | `piyao_articles_2026-04-23.jsonl` | 31 |
+| 辟谣知识库原文 | `debunk_articles_2026-04-23.jsonl` | 31 |
 | 谣言知识库索引 | `rumor_knowledge_base.json` | 31 |
 | 微博原始数据 | `weibo_raw_2026-04-23.jsonl` | 20 |
 | 分析结果 | `analysis_2026-04-23.jsonl` | 20 |
@@ -230,7 +230,7 @@
 - **症状**: 所有 20 条内容的 `kb_matches` 均为空
 - **原因**: 辟谣知识库中的文章（如"圣女果是转基因食品吗"、"保质期越长防腐剂越多"）与测试数据的关键词重叠度未达到 15% 阈值
 - **分析**: 这是正常的 — 知识库目前仅 31 篇文章，覆盖面有限。当知识库累积到 500+ 篇后，"冷饭热炒"型谣言的命中率将显著提升
-- **后续建议**: 持续运行 piyao_crawler 扩充知识库；加入更多辟谣源（中国互联网联合辟谣平台 piyao.org.cn）
+- **后续建议**: 持续运行 piyao_crawler 扩充知识库；加入更多辟谣源（其他公开辟谣数据源）
 
 ### 问题 3: 预筛器遗漏"撞树锻炼"类内容
 
@@ -282,8 +282,8 @@
 
 | 文件 | 绝对路径 |
 |------|---------|
-| 辟谣文章原文 | `/Users/bonjour/.cola/outputs/科普中国-全网伪科普监测系统方案/mvp/data/piyao_articles_2026-04-23.jsonl` |
-| 谣言知识库 | `/Users/bonjour/.cola/outputs/科普中国-全网伪科普监测系统方案/mvp/data/rumor_knowledge_base.json` |
-| 微博原始数据 | `/Users/bonjour/.cola/outputs/科普中国-全网伪科普监测系统方案/mvp/data/weibo_raw_2026-04-23.jsonl` |
-| 分析结果 | `/Users/bonjour/.cola/outputs/科普中国-全网伪科普监测系统方案/mvp/data/analysis_2026-04-23.jsonl` |
-| 本报告 | `/Users/bonjour/.cola/outputs/科普中国-全网伪科普监测系统方案/mvp/data/first_run_report.md` |
+| 辟谣文章原文 | `./mvp/data/debunk_articles_2026-04-23.jsonl` |
+| 谣言知识库 | `./mvp/data/rumor_knowledge_base.json` |
+| 微博原始数据 | `./mvp/data/weibo_raw_2026-04-23.jsonl` |
+| 分析结果 | `./mvp/data/analysis_2026-04-23.jsonl` |
+| 本报告 | `./mvp/data/first_run_report.md` |

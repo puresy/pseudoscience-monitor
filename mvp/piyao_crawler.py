@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-科学辟谣网站抓取模块 - 伪科普监测系统 MVP
+辟谣平台抓取模块 - 伪科普监测系统 MVP
 
-抓取 https://piyao.kepuchina.cn/ 的辟谣文章，
+抓取 https://example.com/debunk/ 的辟谣文章，
 构建本地谣言知识库供LLM核查参考。
 
 用法：
@@ -87,7 +87,7 @@ def fetch_with_retry(
 
 def fetch_rumor_list_api(base_url: str, config: Optional[dict] = None) -> list[dict]:
     """
-    通过科学辟谣网站JSON API获取辟谣文章列表。
+    通过辟谣平台JSON API获取辟谣文章列表。
     API端点: /index/rumor
     返回文章基本信息列表。
     """
@@ -268,8 +268,8 @@ def parse_article_list_html(html: str, base_url: str) -> list[dict]:
 
 def parse_article_detail_html(html: str) -> dict:
     """
-    从科学辟谣文章详情页HTML中提取正文、分类、专家名等信息。
-    适配 piyao.kepuchina.cn/rumor/rumordetail 页面结构。
+    从辟谣文章详情页HTML中提取正文、分类、专家名等信息。
+    适配 公开辟谣数据源/rumor/rumordetail 页面结构。
     """
     result = {
         "content": "",
@@ -278,7 +278,7 @@ def parse_article_detail_html(html: str) -> dict:
         "expert": "",
     }
 
-    # 提取正文 - 科学辟谣网站使用 class="rumor-content" 容器
+    # 提取正文 - 辟谣平台使用 class="rumor-content" 容器
     content_patterns = [
         re.compile(r'<div[^>]*class="[^"]*rumor[_-]?content[^"]*"[^>]*>(.*?)</div>\s*(?:<div|$)',
                     re.DOTALL | re.IGNORECASE),
@@ -324,7 +324,7 @@ def parse_article_detail_html(html: str) -> dict:
         kws = [k.strip() for k in meta_kw.group(1).split(",") if k.strip()]
         result["keywords"] = kws
 
-    # 提取专家名 - 科学辟谣页面格式：作者丨XXX / 审核丨XXX
+    # 提取专家名 - 辟谣页面格式：作者丨XXX / 审核丨XXX
     expert_patterns = [
         re.compile(r"作者[丨|｜：:]\s*([^\s<]{2,30})", re.IGNORECASE),
         re.compile(r"审核[丨|｜：:]\s*([^\s<]{2,30})", re.IGNORECASE),
@@ -344,7 +344,7 @@ def parse_article_detail_html(html: str) -> dict:
 
 def crawl_piyao_list(base_url: str, max_pages: int = 5, config: Optional[dict] = None) -> list[dict]:
     """
-    抓取科学辟谣网站文章列表。
+    抓取辟谣平台文章列表。
     双通道采集：API + HTML列表页，合并去重。
 
     参数：
@@ -494,7 +494,7 @@ def run_piyao_crawler(
     config_path: str = DEFAULT_CONFIG_PATH,
 ) -> tuple[str, str]:
     """
-    运行科学辟谣网站抓取主流程。
+    运行辟谣平台抓取主流程。
 
     参数：
         output_dir: 输出目录
@@ -506,7 +506,7 @@ def run_piyao_crawler(
     """
     config = load_config(config_path)
     piyao_config = config.get("crawler", {}).get("piyao", {})
-    base_url = piyao_config.get("base_url", "https://piyao.kepuchina.cn/")
+    base_url = piyao_config.get("base_url", "https://example.com/debunk/")
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -546,7 +546,7 @@ def run_piyao_crawler(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="科学辟谣网站抓取工具",
+        description="辟谣平台抓取工具",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例：
