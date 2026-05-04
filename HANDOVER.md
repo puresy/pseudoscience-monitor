@@ -91,6 +91,55 @@ Phase 5 是"7天真实采集"，直接跳到了 Phase 6/7/8。
 
 ---
 
+## 二、IMPROVEMENTS.md 落地（13:30更新）
+
+Cola 写的改进点，我做了能做的部分：
+
+### 1. 源配置文件化 ✅
+
+**文件**：`sources.json`
+- 54个种子词，7个分类（恐惧营销/伪权威/科学滥用/食品安全/健康养生/营销导向/高频主题）
+- 4个平台配置（微博启用，B站/知乎/微信待启用）
+- 淘汰规则参数化（试用7天，连续7天0产出降权，14天淘汰）
+
+### 2. 源健康度 + 淘汰机制 ✅
+
+**文件**：`source_health.py`
+- 追踪每个种子词的信息密度（每日采集量、伪科普产出）
+- 试用期管理（新种子词跑7天，≥1条伪科普才采纳）
+- 低产出降权/淘汰
+- CLI：`python source_health.py report/check/status`
+
+### 3. Jina Reader 兜底 ✅
+
+**文件**：`jina_reader.py`
+- 接入 r.jina.ai 做 Markdown 转换
+- 支持批量获取、纯文本/Markdown 模式
+- 测试：成功获取 piyao 主页 18461 字符
+
+### 4. RSS/辟谣网站接入 ✅（部分）
+
+**发现**：
+- piyao.kepuchina.cn 无 RSS（/rss 返回 404）
+- kepuchina.cn 也无 RSS
+
+**替代方案**：
+- **文件**：`piyao_scraper.py`
+- 用 Jina Reader 抓取主页，提取辟谣详情链接
+- 支持反向种子词提取（从辟谣帖中提取谣言主张作为新监测目标）
+- 测试：4条辟谣详情 + 6个反向种子词
+
+### 5. 定时跑 + JSON 模式 ⏳
+
+未做。需要：
+- GitHub Actions 配置
+- pipeline 输出 JSON 到 data/
+- GitHub Pages 自动更新
+
+**建议**：这个让 Cola 来做，涉及 CI/CD 配置。
+
+---
+
 ## 三、文件位置
 
 ```
@@ -102,6 +151,10 @@ mvp/
 ├── cookie_manager.py       # Cookie管理（新建）
 ├── cost_tracker.py         # 成本追踪（新建）
 ├── health_check.py         # 健康检查（新建）
+├── sources.json            # 源配置（新建）
+├── source_health.py        # 源健康度追踪（新建）
+├── jina_reader.py          # Jina Reader 兜底（新建）
+├── piyao_scraper.py        # 辟谣采集器（新建）
 ├── dashboard.html          # 看板（已更新数据）
 ├── crawlers/
 │   ├── base.py             # 基类（新建）
@@ -111,6 +164,7 @@ mvp/
 └── data/
     ├── baseline_v2_2026-05-03.jsonl  # 435条基线
     ├── rumor_knowledge_base.json     # 31条辟谣知识库
+    ├── source_health.json            # 源健康度数据（新建）
     └── test_report.md                # 测试报告
 ```
 
@@ -137,8 +191,9 @@ mvp/
 
 1. **P0**：用 Scrapling 重写 B站采集器，让系统能采到新数据
 2. **P1**：跑一次完整采集 + 分析，验证端到端流程
-3. **P2**：用新数据测试传播分析器
-4. **P3**：知乎/微信采集器接入
+3. **P2**：GitHub Actions 定时跑（IMPROVEMENTS.md 第2点）
+4. **P3**：用新数据测试传播分析器
+5. **P4**：知乎/微信采集器接入
 
 ---
 
