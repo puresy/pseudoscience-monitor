@@ -325,12 +325,12 @@ details.case-card[open] > summary.case-summary::before { transform: rotate(90deg
 }
 
 /* Piyao */
-.debunk-grid {
+.piyao-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 10px;
 }
-.debunk-item {
+.piyao-item {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -338,12 +338,12 @@ details.case-card[open] > summary.case-summary::before { transform: rotate(90deg
   font-size: 13px;
   display: flex; align-items: center; gap: 10px;
 }
-.debunk-item .dot {
+.piyao-item .dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
   background: var(--low);
 }
-.debunk-item .title { color: var(--text-primary); }
-.debunk-item .expert { color: var(--text-muted); font-size: 12px; margin-left: auto; flex-shrink: 0; }
+.piyao-item .title { color: var(--text-primary); }
+.piyao-item .expert { color: var(--text-muted); font-size: 12px; margin-left: auto; flex-shrink: 0; }
 
 /* Pipeline */
 .pipeline {
@@ -425,12 +425,12 @@ footer {
 <!-- HEADER -->
 <div class="header">
   <h1>伪科普监测系统 MVP - 运行报告</h1>
-  <div class="subtitle">2026-04-24 · 微博 + 辟谣平台 · 引擎 v3(修复版) 双层分类体系</div>
+  <div class="subtitle">2026-05-03 · 微博 + 科学辟谣网站 · 引擎 v3.1 双层分类 + 危害主线检测</div>
   <div class="badge-row">
     <span class="badge">📡 微博移动端 Playwright采集</span>
-    <span class="badge">📚 公开辟谣平台辟谣知识库</span>
+    <span class="badge">📚 辟谣知识库 31篇</span>
     <span class="badge llm">🤖 智谱 GLM-4-Flash LLM</span>
-    <span class="badge" style="background:var(--pseudo-bg);color:var(--pseudo);border-color:rgba(239,68,68,0.25)">v3 content_type 分类</span>
+    <span class="badge" style="background:var(--pseudo-bg);color:var(--pseudo);border-color:rgba(239,68,68,0.25)">v3.1 content_type + harm_line</span>
   </div>
 </div>
 
@@ -451,19 +451,19 @@ footer {
       <div class="kpi-sub">10个关键词 × ~43条/词</div>
     </div>
     <div class="kpi-card pseudo">
-      <div class="kpi-number">21</div>
+      <div class="kpi-number">85</div>
       <div class="kpi-label">伪科普 PSEUDOSCIENCE</div>
-      <div class="kpi-sub">HIGH 18 + MEDIUM 3</div>
+      <div class="kpi-sub">占比 19.5%（含GRAY_ZONE）</div>
     </div>
     <div class="kpi-card debunk-card">
-      <div class="kpi-number">27</div>
+      <div class="kpi-number">58</div>
       <div class="kpi-label">辟谣内容 DEBUNKING</div>
-      <div class="kpi-sub">规则检出 32 条辟谣帖</div>
+      <div class="kpi-sub">占比 13.3%</div>
     </div>
     <div class="kpi-card normal-card">
-      <div class="kpi-number">308</div>
+      <div class="kpi-number">218</div>
       <div class="kpi-label">正常科普 NORMAL_SCIENCE</div>
-      <div class="kpi-sub">占比 70.8%</div>
+      <div class="kpi-sub">占比 50.1%</div>
     </div>
   </div>
 </div>
@@ -474,27 +474,27 @@ footer {
   <div class="ct-grid">
     <div class="ct-card pseudo">
       <div class="ct-icon">🔴</div>
-      <div class="ct-num">21</div>
+      <div class="ct-num">85</div>
       <div class="ct-label">伪科普/谣言</div>
-      <div class="ct-pct">4.8%</div>
+      <div class="ct-pct">19.5%</div>
     </div>
     <div class="ct-card debunk">
       <div class="ct-icon">🟢</div>
-      <div class="ct-num">27</div>
+      <div class="ct-num">58</div>
       <div class="ct-label">辟谣内容</div>
-      <div class="ct-pct">6.2%</div>
+      <div class="ct-pct">13.3%</div>
     </div>
     <div class="ct-card normal">
       <div class="ct-icon">🔵</div>
-      <div class="ct-num">308</div>
+      <div class="ct-num">218</div>
       <div class="ct-label">正常科普</div>
-      <div class="ct-pct">70.8%</div>
+      <div class="ct-pct">50.1%</div>
     </div>
     <div class="ct-card nonsci">
       <div class="ct-icon">⚪</div>
-      <div class="ct-num">79</div>
+      <div class="ct-num">73</div>
       <div class="ct-label">非科学内容</div>
-      <div class="ct-pct">18.2%</div>
+      <div class="ct-pct">16.8%</div>
     </div>
   </div>
 
@@ -521,22 +521,22 @@ footer {
         <div class="legend-item">
           <div class="legend-dot" style="background:var(--pseudo)"></div>
           <span>伪科普 PSEUDOSCIENCE</span>
-          <span class="legend-value" style="color:var(--pseudo)">21 (4.8%)</span>
+          <span class="legend-value" style="color:var(--pseudo)">85 (19.5%)</span>
         </div>
         <div class="legend-item">
           <div class="legend-dot" style="background:var(--debunk)"></div>
           <span>辟谣 DEBUNKING</span>
-          <span class="legend-value" style="color:var(--debunk)">27 (6.2%)</span>
+          <span class="legend-value" style="color:var(--debunk)">58 (13.3%)</span>
         </div>
         <div class="legend-item">
           <div class="legend-dot" style="background:var(--normal-sci)"></div>
           <span>正常科普 NORMAL_SCIENCE</span>
-          <span class="legend-value" style="color:var(--normal-sci)">308 (70.8%)</span>
+          <span class="legend-value" style="color:var(--normal-sci)">218 (50.1%)</span>
         </div>
         <div class="legend-item">
           <div class="legend-dot" style="background:var(--nonsci)"></div>
           <span>非科学 NON_SCIENCE</span>
-          <span class="legend-value" style="color:var(--nonsci)">79 (18.2%)</span>
+          <span class="legend-value" style="color:var(--nonsci)">73 (16.8%)</span>
         </div>
       </div>
     </div>
@@ -581,27 +581,27 @@ footer {
     </div>
     <!-- V3 -->
     <div class="compare-card">
-      <h3><span class="version-tag v3-tag">v3 重构版</span> 内容分类分布(content_type)</h3>
+      <h3><span class="version-tag v3-tag">v3.1 重构版</span> 内容分类分布(content_type)</h3>
       <div class="bar-chart">
         <div class="bar-row">
           <span class="bar-label">🔴 伪科普</span>
-          <div class="bar-track"><div class="bar-fill pseudo" style="width:4.8%">21</div></div>
-          <span class="bar-value" style="color:var(--pseudo)">21</span>
+          <div class="bar-track"><div class="bar-fill pseudo" style="width:19.5%">85</div></div>
+          <span class="bar-value" style="color:var(--pseudo)">85</span>
         </div>
         <div class="bar-row">
           <span class="bar-label">🟢 辟谣</span>
-          <div class="bar-track"><div class="bar-fill debunk" style="width:6.2%">27</div></div>
-          <span class="bar-value" style="color:var(--debunk)">27</span>
+          <div class="bar-track"><div class="bar-fill debunk" style="width:13.3%">58</div></div>
+          <span class="bar-value" style="color:var(--debunk)">58</span>
         </div>
         <div class="bar-row">
           <span class="bar-label">🔵 正常科普</span>
-          <div class="bar-track"><div class="bar-fill normal-sci" style="width:70.8%">308</div></div>
-          <span class="bar-value" style="color:var(--normal-sci)">308</span>
+          <div class="bar-track"><div class="bar-fill normal-sci" style="width:50.1%">218</div></div>
+          <span class="bar-value" style="color:var(--normal-sci)">218</span>
         </div>
         <div class="bar-row">
           <span class="bar-label">⚪ 非科学</span>
-          <div class="bar-track"><div class="bar-fill nonsci" style="width:18.2%">79</div></div>
-          <span class="bar-value" style="color:var(--nonsci)">79</span>
+          <div class="bar-track"><div class="bar-fill nonsci" style="width:16.8%">73</div></div>
+          <span class="bar-value" style="color:var(--nonsci)">73</span>
         </div>
       </div>
     </div>
@@ -610,31 +610,31 @@ footer {
   <!-- Key improvements -->
   <div class="improvements">
     <div class="improve-badge">
-      <div class="num down" style="font-size:22px;">v1→v3</div>
-      <div class="desc">分类体系重构<br>单severity → content_type + severity</div>
+      <div class="num down" style="font-size:22px;">v1→v3.1</div>
+      <div class="desc">分类体系重构<br>content_type + severity + harm_line</div>
     </div>
     <div class="improve-badge">
-      <div class="num purple">70</div>
-      <div class="desc">LLM调用次数(16.1%数据)</div>
+      <div class="num purple">85</div>
+      <div class="desc">伪科普检出(19.5%)<br>含GRAY_ZONE灰度判定</div>
     </div>
     <div class="improve-badge">
-      <div class="num purple">47</div>
-      <div class="desc">LLM翻转判定<br>⬆️22 ⬇️20</div>
+      <div class="num purple">3</div>
+      <div class="desc">危害主线检测<br>电诈/风评受损/邪教</div>
     </div>
     <div class="improve-badge">
-      <div class="num up">32</div>
-      <div class="desc">辟谣帖独立识别<br>不再混入LOW</div>
+      <div class="num up">58</div>
+      <div class="desc">辟谣帖独立识别<br>占比 13.3%</div>
     </div>
     <div class="improve-badge">
-      <div class="num up">308</div>
-      <div class="desc">正常科普独立分类<br>不再被标为"低风险"</div>
+      <div class="num up">31</div>
+      <div class="desc">辟谣知识库<br>n-gram匹配</div>
     </div>
   </div>
 </div>
 
 <!-- 4. PSEUDOSCIENCE CASES -->
 <div class="section">
-  <div class="section-title"><span class="icon">🔴</span> 伪科普/谣言案例(PSEUDOSCIENCE)<span style="font-size:14px;color:var(--text-muted);font-weight:400;margin-left:8px;">共21条(已修正8条误判)</span></div>
+  <div class="section-title"><span class="icon">🔴</span> 伪科普/谣言案例(PSEUDOSCIENCE)<span style="font-size:14px;color:var(--text-muted);font-weight:400;margin-left:8px;">共85条(v3.1含危害主线检测)</span></div>
   <div class="case-group">
     <details class="case-card border-high" data-severity="high" data-ct="pseudoscience">
 <summary class="case-summary">
@@ -935,7 +935,7 @@ footer {
     <div class="kpi-card green">
       <div class="kpi-number">31</div>
       <div class="kpi-label">辟谣文章</div>
-      <div class="kpi-sub">来自公开辟谣平台平台</div>
+      <div class="kpi-sub">来自科普中国·科学辟谣平台</div>
     </div>
     <div class="kpi-card accent">
       <div class="kpi-number">14</div>
@@ -953,38 +953,38 @@ footer {
       <span style="color:var(--low);font-weight:600;">点击展开 31 篇辟谣文章标题</span>
     </summary>
     <div class="case-detail">
-      <div class="debunk-grid">
-        <div class="debunk-item"><span class="dot"></span><span class="title">上了年纪,应该少喝水?</span><span class="expert">薛庆鑫</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">经常吃猪油渣能防癌?</span><span class="expert">豆丁</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">醋吃多了,会导致骨质疏松?</span><span class="expert">李纯</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">标注"0 反式脂肪酸"的食品,更健康?</span><span class="expert">辟谣平台</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">只要补足了钙,骨骼就不会缺钙?就不会得骨质疏松了?</span><span class="expert">纪刚</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">锻炼补水,喝运动饮料比喝白开水更好吗?</span><span class="expert">阮光锋</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">水果甜是因为加了甜味素?</span><span class="expert">阮光锋</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">圣女果是转基因食品,不能吃?</span><span class="expert">李纯</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">睡前多吃点碳水,就能快速入睡?</span><span class="expert">蒋永源</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">号称"北极黄金"的海豹油能降血脂、抗炎抗衰?</span><span class="expert">王璐</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">果芯发黑的菠萝是"糖心菠萝",更好吃?</span><span class="expert">张聪</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">宠物吃生骨肉更健康?</span><span class="expert">辟谣平台</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">感冒干咳,喝点酒就能好?医生提醒:千万别!!!</span><span class="expert">范运柱</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">心脏骤停可以用硝酸甘油急救?</span><span class="expert">辟谣平台</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">突发心梗,用力拍打胸口可疏通血栓?</span><span class="expert">辟谣平台</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">儿童心脏有杂音,代表有先天性心脏病?</span><span class="expert">丁亚辉</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">白鼻涕变为黄鼻涕说明感冒变轻了?</span><span class="expert">孙益兰</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">抗结核病药很伤肝,能少吃就少吃,可以靠自身免疫力硬抗?</span><span class="expert">蒋永源</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">蓖麻籽能润肠通便,便秘时可以吃?当心中毒!</span><span class="expert">孙轶飞</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">先天性心脏病患者需要终生吃药?</span><span class="expert">蒋永源</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">先天性心脏病术后一劳永逸,无需复查?</span><span class="expert">丁亚辉</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">木耳可以用水泡久一点,这样更干净,泡得越久越软口感越好?</span><span class="expert">辟谣平台</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">三文鱼都可以生吃,只要是三文鱼就没问题?</span><span class="expert">辟谣平台</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">罐头食品有大量防腐剂,既没营养又不健康?这种说法过于片面。</span><span class="expert">辟谣平台</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">保质期越长,防腐剂越多?</span><span class="expert">张娜</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">"左旋肉碱咖啡"可以健康减肥?</span><span class="expert">豆丁</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">牛肉表面发灰,是变质不能吃了?</span><span class="expert">李纯</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">速冻水饺是垃圾食品,没营养?</span><span class="expert">豆丁</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">虾头白线是"寄生虫"?</span><span class="expert">豆丁</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">长黑斑的香蕉有毒,不能吃?</span><span class="expert">豆丁</span></div>
-<div class="debunk-item"><span class="dot"></span><span class="title">大白菜上边有小黑点,就说明菜坏了要赶紧扔掉?</span><span class="expert">辟谣平台</span></div>
+      <div class="piyao-grid">
+        <div class="piyao-item"><span class="dot"></span><span class="title">上了年纪,应该少喝水?</span><span class="expert">薛庆鑫</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">经常吃猪油渣能防癌?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">醋吃多了,会导致骨质疏松?</span><span class="expert">李纯</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">标注"0 反式脂肪酸"的食品,更健康?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">只要补足了钙,骨骼就不会缺钙?就不会得骨质疏松了?</span><span class="expert">纪刚</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">锻炼补水,喝运动饮料比喝白开水更好吗?</span><span class="expert">阮光锋</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">水果甜是因为加了甜味素?</span><span class="expert">阮光锋</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">圣女果是转基因食品,不能吃?</span><span class="expert">李纯</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">睡前多吃点碳水,就能快速入睡?</span><span class="expert">蒋永源</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">号称"北极黄金"的海豹油能降血脂、抗炎抗衰?</span><span class="expert">王璐</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">果芯发黑的菠萝是"糖心菠萝",更好吃?</span><span class="expert">张聪</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">宠物吃生骨肉更健康?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">感冒干咳,喝点酒就能好?医生提醒:千万别!!!</span><span class="expert">范运柱</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">心脏骤停可以用硝酸甘油急救?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">突发心梗,用力拍打胸口可疏通血栓?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">儿童心脏有杂音,代表有先天性心脏病?</span><span class="expert">丁亚辉</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">白鼻涕变为黄鼻涕说明感冒变轻了?</span><span class="expert">孙益兰</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">抗结核病药很伤肝,能少吃就少吃,可以靠自身免疫力硬抗?</span><span class="expert">蒋永源</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">蓖麻籽能润肠通便,便秘时可以吃?当心中毒!</span><span class="expert">孙轶飞</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">先天性心脏病患者需要终生吃药?</span><span class="expert">蒋永源</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">先天性心脏病术后一劳永逸,无需复查?</span><span class="expert">丁亚辉</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">木耳可以用水泡久一点,这样更干净,泡得越久越软口感越好?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">三文鱼都可以生吃,只要是三文鱼就没问题?</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">罐头食品有大量防腐剂,既没营养又不健康?这种说法过于片面。</span><span class="expert">科学辟谣</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">保质期越长,防腐剂越多?</span><span class="expert">张娜</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">"左旋肉碱咖啡"可以健康减肥?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">牛肉表面发灰,是变质不能吃了?</span><span class="expert">李纯</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">速冻水饺是垃圾食品,没营养?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">虾头白线是"寄生虫"?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">长黑斑的香蕉有毒,不能吃?</span><span class="expert">豆丁</span></div>
+<div class="piyao-item"><span class="dot"></span><span class="title">大白菜上边有小黑点,就说明菜坏了要赶紧扔掉?</span><span class="expert">科学辟谣</span></div>
 
       </div>
     </div>
@@ -1022,7 +1022,7 @@ footer {
     <div class="pipe-node" style="border-color:var(--high)">
       <div class="pipe-title">📊 四类输出</div>
       <div class="pipe-count">21</div>
-      <div class="pipe-desc">PSEUDOSCIENCE标记<br>+ DEBUNKING 27<br>+ NORMAL 308<br>+ NON_SCI 79</div>
+      <div class="pipe-desc">PSEUDOSCIENCE标记<br>+ DEBUNKING 58<br>+ NORMAL 218<br>+ NON_SCI 73<br>+ harm_line检测</div>
     </div>
   </div>
 </div>
@@ -1043,7 +1043,7 @@ footer {
     </div>
     <div class="plan-card">
       <h4>📡 扩充数据源</h4>
-      <p>接入小红书、抖音、今日头条采集模块。扩充辟谣知识库至500+条(补充互联网辟谣数据源 example.com/rumor-check)。</p>
+      <p>接入小红书、抖音、今日头条采集模块。扩充辟谣知识库至500+条(补充中国互联网联合辟谣平台 piyao.org.cn)。</p>
     </div>
     <div class="plan-card">
       <h4>📊 周报自动化</h4>
@@ -1067,8 +1067,8 @@ footer {
 </div>
 
 <footer>
-  伪科普监测系统 v3(修复版) · 2026-04-24 · 数据采集 435条 · 辟谣知识库 31篇 · LLM: 智谱GLM-4-Flash<br>
-  报告由系统自动生成 · 公开辟谣平台 · 误判修正后：21条PSEUDOSCIENCE（已纠正8条误判→NORMAL_SCIENCE/DEBUNKING/NON_SCIENCE）
+  伪科普监测系统 v3.1 · 2026-05-03 · 数据采集 435条 · 辟谣知识库 31篇 · 危害主线3条 · LLM: 智谱GLM-4-Flash<br>
+  报告由系统自动生成 · 科普中国 · 误判修正后：21条PSEUDOSCIENCE（已纠正8条误判→NORMAL_SCIENCE/DEBUNKING/NON_SCIENCE）
 </footer>
 
 </body>

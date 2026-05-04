@@ -57,7 +57,7 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> dict:
 # ============================================================
 
 # 内容类型
-CONTENT_TYPES = ["PSEUDOSCIENCE", "DEBUNKING", "NORMAL_SCIENCE", "NON_SCIENCE"]
+CONTENT_TYPES = ["PSEUDOSCIENCE", "DEBUNKING", "NORMAL_SCIENCE", "NON_SCIENCE", "GRAY_ZONE"]
 
 # 风险等级（仅 PSEUDOSCIENCE 使用 CRITICAL/HIGH/MEDIUM，其余为 NONE）
 SEVERITY_LEVELS = ["NONE", "MEDIUM", "HIGH", "CRITICAL"]
@@ -94,6 +94,9 @@ SCIENCE_DOMAIN_KEYWORDS = [
     # 食品相关（食品安全谣言高频词）
     "中毒", "有毒", "相克", "不能吃", "不能一起吃", "致癌物",
     "食物", "饮食", "吃了会", "营养",
+    # 灵修/邪教相关（危害主线检测）
+    "灵修", "修行", "觉醒", "脉轮", "能量场", "灵魂", "业障",
+    "导师", "法门", "共修", "同修", "身心灵", "疗愈",
 ]
 
 # 恐惧营销词
@@ -125,6 +128,8 @@ FAKE_AUTHORITY_WORDS = [
     "民间偏方", "秘方", "有医生说", "医学界发现",
     "国际研究显示", "欧美研究", "某知名医院",
     "某权威机构证实", "某协会认证",
+    "偏方", "验方", "祖传秘方", "老中医", "世外高人",
+    "手抄方", "治病偏方",
 ]
 
 # 虚假见证词
@@ -137,13 +142,22 @@ FAKE_TESTIMONY_WORDS = [
 # 科学概念滥用词（在非专业语境使用）
 SCIENCE_ABUSE_WORDS = [
     "量子能量", "量子治疗", "量子芯片", "量子纠缠", "量子养生",
+    "量子手环", "量子康", "量子共振", "量子疗愈",
     "纳米技术", "纳米养生", "纳米水", "生物频率", "能量波", "磁场能量",
     "干细胞修复", "细胞唤醒", "细胞活化", "基因修复", "DNA激活",
     "负离子治病", "远红外排毒",
+    "暗物质能", "暗能量", "全息能量", "宇宙能量", "天地能量",
+    "频率治疗", "音频疗愈", "光波疗愈", "声波疗愈",
+    "脉轮", "灵性觉醒", "灵性疗愈", "能量场", "气场疗愈",
+    "辟谷排毒", "断食排毒", "细胞营养", "小分子肽",
+    "真气导引", "隔空发功", "气功治病",
 ]
 
 # 科学概念滥用组合检测：当多个高端科学词同时出现在非专业语境时触发
-SCIENCE_BUZZWORDS = ["量子", "纳米", "干细胞", "基因", "负离子", "远红外", "石墨烯", "磁场"]
+SCIENCE_BUZZWORDS = [
+    "量子", "纳米", "干细胞", "基因", "负离子", "远红外", "石墨烯", "磁场",
+    "暗物质", "暗能量", "全息", "脉轮", "能量场", "频率", "共振",
+]
 
 # 夸大效能词
 EXAGGERATION_WORDS = [
@@ -169,11 +183,17 @@ FOOD_CLASH_WORDS = [
 
 # 辟谣/科普帖标识词
 DEBUNK_WORDS = [
-    "辟谣", "谣言", "别信", "不实", "假的", "辟谣平台", "公开辟谣平台", "真相是",
+    "辟谣", "谣言", "别信", "不实", "假的", "科学辟谣", "真相是",
     "别再被谣言", "真相来了", "别再传了", "不是真的", "不可信", "没有科学依据",
     "其实是", "实际上", "澄清", "正确的说法", "科学解释", "科学事实",
     "食药监", "卫健委", "疾控中心", "世卫组织", "WHO",
     "别被骗", "防骗", "提醒大家", "12377",
+    # 间接辟谣表达
+    "被罚", "被打假", "打假", "扎心了", "别被忽悠", "别再被",
+    "真相", "竟然是", "注意", "警惕",
+    "别再", "误导", "伪概念", "骗局", "骗人的",
+    "专家辟谣", "医生辟谣", "官方回应", "已被证实",
+    "不存在", "没有科学依据", "不靠谱", "不可靠",
 ]
 
 # 辟谣账号关键词（用户名包含这些词的更可能是辟谣帖）
@@ -181,6 +201,56 @@ DEBUNK_ACCOUNT_KEYWORDS = [
     "辟谣", "科普", "科学", "营养师", "医生", "医学", "健康报",
     "卫健", "疾控", "食药",
 ]
+
+# === 三条危害主线特征词 ===
+
+# 电诈线：引流 + 恐惧制造 + 产品推销
+FRAUD_SIGNALS = {
+    "引流话术": [
+        "加微信", "进群", "私聊", "扫码进群", "免费领取", "点击链接",
+        "加V", "加好友", "详情咨询", "长按识别", "扫二维码",
+        "关注公众号", "回复关键词", "领取资料",
+    ],
+    "商业链接": [
+        "淘宝", "京东", "拼多多", "微店", "小程序", "商城",
+        "下单", "购买链接", "立即购买", "限时", "秒杀",
+    ],
+    "恐惧推销": [
+        "再不治就晚了", "错过就后悔", "医院不会告诉你", "赶紧转发",
+        "不转不是人", "转发救人", "别等了", "最后机会",
+    ],
+}
+
+# 风评受损线：定向攻击 + 阴谋论
+REPUTATION_ATTACK_SIGNALS = {
+    "攻击话术": [
+        "资本操控", "利益集团", "收了钱", "打压真相", "被收买",
+        "资本家", "无良商家", "黑心", "骗人的", "割韭菜",
+        "不想让你知道", "被封杀", "被禁", "不敢让你看",
+    ],
+    "阴谋论": [
+        "惊天阴谋", "真相被隐瞒", "有人在控制", "背后有人",
+        "利益链", "内幕", "黑幕", "潜规则",
+    ],
+}
+
+# 邪教属性线：组织化 + 精神控制
+CULT_SIGNALS = {
+    "组织化特征": [
+        "导师", "法门", "觉醒", "修行", "共修", "同修", "灵性",
+        "上师", "恩师", "师父", "大师", "活佛",
+        "入门", "皈依", "灌顶", "加持",
+    ],
+    "精神控制": [
+        "业障", "因果报应", "前世", "轮回", "灵魂", "能量场",
+        "净化", "开悟", "觉悟", "解脱", "渡劫",
+        "信则灵", "心诚则灵", "放下执念",
+    ],
+    "灵修商业": [
+        "灵修课程", "冥想课程", "身心灵", "疗愈", "能量疗愈",
+        "脉轮疗愈", "灵性成长", "内在小孩", "高维智慧",
+    ],
+}
 
 # 伪科普分类
 CATEGORIES = {
@@ -436,14 +506,24 @@ def apply_rules(text: str, kw_stats: dict) -> list[dict]:
             })
 
     # R5: 食品相克谣言
+    # 排除：辟谣帖、玩梗/提及（非传播意图）
     if kw_stats["food_clash"]["count"] >= 1:
-        triggered.append({
-            "rule_id": "R5",
-            "name": "食品相克谣言",
-            "severity": "MEDIUM",
-            "confidence": 0.85,
-            "detail": f"食品相克触发词: {kw_stats['food_clash']['hits']}",
-        })
+        _debunk_indicators = ["辟谣", "谣言", "真相", "别信", "不存在", "不可信", "别被"]
+        _casual_indicators = ["想你", "可爱", "笑死", "担心", "感觉", "喷了"]
+        _is_debunk_context = any(d in text for d in _debunk_indicators)
+        _is_casual = any(c in text for c in _casual_indicators)
+        if _is_debunk_context:
+            pass  # 辟谣帖中提到食物相克不算伪科普
+        elif _is_casual:
+            pass  # 随口提及不算传播
+        else:
+            triggered.append({
+                "rule_id": "R5",
+                "name": "食品相克谣言",
+                "severity": "MEDIUM",
+                "confidence": 0.85,
+                "detail": f"食品相克触发词: {kw_stats['food_clash']['hits']}",
+            })
 
     # R6: 纯营销导向（健康/科学 + 营销）
     if kw_stats["marketing"]["count"] >= 2:
@@ -453,6 +533,16 @@ def apply_rules(text: str, kw_stats: dict) -> list[dict]:
             "severity": "HIGH",
             "confidence": 0.85,
             "detail": f"营销词({kw_stats['marketing']['count']}个): {kw_stats['marketing']['hits']}",
+        })
+
+    # R7: 科学概念滥用（独立触发，不要求夸大词共现）
+    if kw_stats["science_abuse"]["count"] >= 1:
+        triggered.append({
+            "rule_id": "R7",
+            "name": "科学概念滥用",
+            "severity": "HIGH",
+            "confidence": 0.85,
+            "detail": f"科学概念滥用({kw_stats['science_abuse']['hits']})",
         })
 
     return triggered
@@ -477,40 +567,77 @@ def load_knowledge_base(kb_path: str) -> dict:
         return {}
 
 
+def _tokenize_chinese(text: str) -> set[str]:
+    """中文分词：提取 2-4 字的 n-gram"""
+    text = re.sub(r"[^\u4e00-\u9fffa-zA-Z0-9]", " ", text.lower())
+    tokens = set()
+    # 提取连续中文字符的 2-4 gram
+    for m in re.finditer(r"[\u4e00-\u9fff]{2,}", text):
+        s = m.group()
+        for n in (2, 3, 4):
+            for i in range(len(s) - n + 1):
+                tokens.add(s[i:i+n])
+    # 提取英文词
+    for m in re.finditer(r"[a-zA-Z]+\d*", text):
+        tokens.add(m.group())
+    return tokens
+
+
 def check_against_knowledge_base(text: str, kb: dict) -> list[dict]:
     """
     将文本与谣言知识库比对，查找已知辟谣。
-    使用简单的关键词重叠度匹配。
+    使用 n-gram 重叠匹配 + 标题精确匹配。
     """
     if not kb:
         return []
 
     matches = []
     text_lower = text.lower()
-
-    text_tokens = set(re.findall(r"[\u4e00-\u9fff]{2,}|[a-zA-Z]+\d*", text_lower))
+    text_ngrams = _tokenize_chinese(text)
 
     for url, article in kb.items():
         title = article.get("title", "").lower()
         summary = article.get("content_summary", "").lower()
-        keywords = [k.lower() for k in article.get("keywords", [])]
 
-        article_tokens = set(re.findall(r"[\u4e00-\u9fff]{2,}|[a-zA-Z]+\d*", title + " " + summary))
-        article_tokens.update(keywords)
-
-        if not article_tokens:
+        # 标题精确匹配（高权重）
+        title_clean = title.replace("？", "").replace("?", "").replace("！", "").replace("!", "").replace(",", "，")
+        # 去掉标点后做包含匹配
+        title_no_punct = re.sub(r"[^\u4e00-\u9fffa-zA-Z0-9]", "", title_clean)
+        text_no_punct = re.sub(r"[^\u4e00-\u9fffa-zA-Z0-9]", "", text_lower)
+        # 双向包含检查：标题包含文本 OR 文本包含标题的核心部分
+        title_in_text = title_no_punct and len(title_no_punct) >= 4 and title_no_punct in text_no_punct
+        text_in_title = text_no_punct and len(text_no_punct) >= 4 and text_no_punct in title_no_punct
+        if title_in_text or text_in_title:
+            matches.append({
+                "title": article.get("title", ""),
+                "url": url,
+                "overlap_keywords": [title_clean],
+                "overlap_ratio": 0.95,
+                "match_type": "title_exact",
+            })
             continue
 
-        overlap = text_tokens & article_tokens
-        overlap_ratio = len(overlap) / max(len(article_tokens), 1)
+        # N-gram 重叠匹配（只用标题，避免摘要稀释）
+        title_ngrams = _tokenize_chinese(title)
 
-        if overlap_ratio > 0.15 and len(overlap) >= 3:
+        if not title_ngrams:
+            continue
+
+        overlap = text_ngrams & title_ngrams
+
+        if len(overlap) < 2:
+            continue
+
+        # 使用重叠数 / 标题 n-gram 数（避免被文本长度稀释）
+        overlap_ratio = len(overlap) / max(len(title_ngrams), 1)
+
+        if overlap_ratio > 0.3:
             matches.append({
                 "title": article.get("title", ""),
                 "url": url,
                 "overlap_keywords": list(overlap)[:10],
                 "overlap_ratio": round(overlap_ratio, 3),
-                "expert": article.get("expert", ""),
+                "match_type": "ngram_overlap",
             })
 
     matches.sort(key=lambda x: x["overlap_ratio"], reverse=True)
@@ -596,6 +723,72 @@ def determine_rule_severity(risk_score: float, rules: list[dict], config: dict) 
 
 
 # ============================================================
+# 阶段5.5：危害主线检测
+# ============================================================
+
+def detect_harm_line(text: str, kw_stats: dict) -> dict:
+    """
+    检测伪科普内容属于哪条危害主线。
+
+    返回：
+        {"harm_line": "fraud|reputation_attack|cult|none",
+         "confidence": float,
+         "evidence": list[str]}
+    """
+    evidence = []
+    scores = {"fraud": 0, "reputation_attack": 0, "cult": 0}
+
+    # 电诈线检测
+    for category, words in FRAUD_SIGNALS.items():
+        hits = [w for w in words if w in text]
+        if hits:
+            scores["fraud"] += len(hits)
+            evidence.extend([f"电诈:{category}:{h}" for h in hits])
+
+    # 营销词 + 恐惧词 = 强电诈信号
+    if kw_stats["marketing"]["count"] >= 1 and kw_stats["fear"]["count"] >= 1:
+        scores["fraud"] += 3
+        evidence.append("电诈:恐惧营销组合")
+
+    # 风评受损线检测
+    for category, words in REPUTATION_ATTACK_SIGNALS.items():
+        hits = [w for w in words if w in text]
+        if hits:
+            scores["reputation_attack"] += len(hits)
+            evidence.extend([f"风评:{category}:{h}" for h in hits])
+
+    # 邪教属性线检测
+    for category, words in CULT_SIGNALS.items():
+        hits = [w for w in words if w in text]
+        if hits:
+            scores["cult"] += len(hits) if category != "灵修商业" else len(hits) * 2
+            evidence.extend([f"邪教:{category}:{h}" for h in hits])
+
+    # 科学概念滥用 + 灵修 = 强邪教信号
+    if kw_stats["science_abuse"]["count"] >= 1:
+        cult_hits = [w for w in CULT_SIGNALS["精神控制"] if w in text]
+        if cult_hits:
+            scores["cult"] += 3
+            evidence.append("邪教:科学滥用+精神控制组合")
+
+    # 选择最高分的主线
+    max_line = max(scores, key=scores.get)
+    max_score = scores[max_line]
+
+    if max_score == 0:
+        return {"harm_line": "none", "confidence": 0.0, "evidence": []}
+
+    # 置信度：分数越高越确定，但上限 0.95
+    confidence = min(0.5 + max_score * 0.15, 0.95)
+
+    return {
+        "harm_line": max_line,
+        "confidence": round(confidence, 2),
+        "evidence": evidence,
+    }
+
+
+# ============================================================
 # 阶段6：内容分类
 # ============================================================
 
@@ -609,7 +802,7 @@ def classify_content(
     对内容进行细分类。
 
     返回：
-        {"category": "...", "subtype": "...", "reason": "..."}
+        {"category": "...", "subtype": "...", "reason": "...", "harm_line": "..."}
     """
     # 优先判断：有知识库匹配 → 冷饭热炒
     if kb_matches and kb_matches[0]["overlap_ratio"] > 0.25:
@@ -618,13 +811,16 @@ def classify_content(
             "category_cn": "冷饭热炒",
             "subtype": "",
             "reason": f"与已知辟谣文章高度相关: {kb_matches[0]['title']}",
+            "harm_line": "none",
         }
+
+    # 检测危害主线
+    harm = detect_harm_line(text, kw_stats)
 
     # 有营销词 → 伪科普（营销属性）
     if kw_stats["marketing"]["count"] >= 2:
         subtype = "marketing"
-        fraud_signals = ["免费领", "加微信", "扫码", "转账", "汇款", "点击链接"]
-        if any(s in text for s in fraud_signals):
+        if harm["harm_line"] == "fraud":
             subtype = "fraud"
 
         return {
@@ -633,16 +829,26 @@ def classify_content(
             "subtype": subtype,
             "subtype_cn": PSEUDO_SCIENCE_SUBTYPES.get(subtype, ""),
             "reason": f"包含明显营销/推广特征: {kw_stats['marketing']['hits']}",
+            "harm_line": harm["harm_line"],
+            "harm_evidence": harm["evidence"],
         }
 
     # 科学概念滥用 → 伪科普
     if kw_stats["science_abuse"]["count"] >= 1:
+        subtype = "marketing"
+        if harm["harm_line"] == "cult":
+            subtype = "cult"
+        elif harm["harm_line"] == "fraud":
+            subtype = "fraud"
+
         return {
             "category": "pseudo_science",
             "category_cn": "伪科普",
-            "subtype": "marketing",
-            "subtype_cn": "营销属性",
+            "subtype": subtype,
+            "subtype_cn": PSEUDO_SCIENCE_SUBTYPES.get(subtype, ""),
             "reason": f"滥用科学概念: {kw_stats['science_abuse']['hits']}",
+            "harm_line": harm["harm_line"],
+            "harm_evidence": harm["evidence"],
         }
 
     # 绝对化+恐惧 → 认知误区
@@ -652,6 +858,8 @@ def classify_content(
             "category_cn": "认知误区",
             "subtype": "",
             "reason": "使用绝对化表述传播恐惧",
+            "harm_line": harm["harm_line"],
+            "harm_evidence": harm["evidence"],
         }
 
     # 食品相克 → 认知误区
@@ -661,6 +869,8 @@ def classify_content(
             "category_cn": "认知误区",
             "subtype": "",
             "reason": "食品相克类误导信息",
+            "harm_line": harm["harm_line"],
+            "harm_evidence": harm["evidence"],
         }
 
     # 虚假权威 → 新发谣言
@@ -670,6 +880,8 @@ def classify_content(
             "category_cn": "新发谣言",
             "subtype": "",
             "reason": f"引用虚假权威: {kw_stats['fake_authority']['hits']}",
+            "harm_line": harm["harm_line"],
+            "harm_evidence": harm["evidence"],
         }
 
     # 默认
@@ -678,6 +890,8 @@ def classify_content(
         "category_cn": "待定",
         "subtype": "",
         "reason": "未匹配到明确分类模式",
+        "harm_line": harm["harm_line"],
+        "harm_evidence": harm["evidence"],
     }
 
 
@@ -775,7 +989,7 @@ def llm_analyze(
             "is_debunking": bool,
         }
     """
-    system_prompt = """你是相关机构"辟谣平台"平台的资深内容审核专家，擅长识别伪科普、健康谣言、认知误区。
+    system_prompt = """你是中国科协"科学辟谣"平台的资深内容审核专家，擅长识别伪科普、健康谣言、认知误区。
 
 最重要的判断原则：先判断核心科学断言是否属实。
 - 如果科学断言基本属实（如"黄曲霉毒素是强致癌物""发霉食物不能吃"），即使措辞有恐惧营销倾向（如"转给家人""杀不死"），也不算伪科普，应判定为 NORMAL_SCIENCE。
@@ -815,8 +1029,16 @@ def llm_analyze(
     "confidence": 0.0-1.0,
     "category": "伪科普/认知误区/冷饭热炒/新发谣言/辟谣内容/正常科普/正常内容",
     "reasoning": "一句话说明判断理由",
-    "is_debunking": true/false
-}"""
+    "is_debunking": true/false,
+    "harm_line": "fraud/reputation_attack/cult/none"
+}
+
+关于harm_line（危害主线，仅当content_type为PSEUDOSCIENCE时有意义）：
+- fraud（电诈线）：内容包含引流话术（加微信/进群/扫码）、商业链接、恐惧+推销模式
+- reputation_attack（风评受损线）：内容定向攻击特定企业/技术/政策，使用阴谋论话术
+- cult（邪教属性线）：内容包含灵修/修行/导师等组织化特征，或精神控制话术
+- none：不属于以上任何主线
+注意：一条内容只归入一条主线，优先级：fraud > cult > reputation_attack"""
 
     # 截断过长文本（节省token）
     truncated = text[:800] if len(text) > 800 else text
@@ -927,6 +1149,8 @@ def analyze_text(
         "severity": "NONE",
         "rule_severity": "NONE",
         "classification": {},
+        "harm_line": "none",
+        "harm_evidence": [],
         "llm_analysis": None,
         "llm_flipped": False,
         "llm_flip_direction": "",
@@ -937,6 +1161,17 @@ def analyze_text(
     is_science, science_kws = is_science_related(text)
     result["is_science_related"] = is_science
     result["science_keywords"] = science_kws
+
+    # 知识库快速匹配（即使不涉科，如果命中辟谣库也应继续分析）
+    if not is_science:
+        if kb is None:
+            kb_path = config.get("output", {}).get("knowledge_base", "data/rumor_knowledge_base.json")
+            kb = load_knowledge_base(kb_path)
+        quick_kb_match = check_against_knowledge_base(text, kb)
+        if quick_kb_match and (quick_kb_match[0]["overlap_ratio"] > 0.15 or quick_kb_match[0].get("match_type") == "title_exact"):
+            is_science = True
+            result["is_science_related"] = True
+            logger.info(f"知识库命中，强制涉科: {quick_kb_match[0]['title']}")
 
     if not is_science:
         logger.info("文本不涉科，跳过后续分析")
@@ -969,8 +1204,8 @@ def analyze_text(
 
     # 认证媒体/机构/政府账号：风险得分衰减（降低误判倾向）
     if verified and verified_type in (2, 3):
-        risk_score = round(risk_score * 0.7, 2)
-        logger.debug(f"认证媒体/机构衰减: verified_type={verified_type}, 得分 ×0.7 → {risk_score}")
+        risk_score = round(risk_score * 0.5, 2)
+        logger.debug(f"认证媒体/机构衰减: verified_type={verified_type}, 得分 ×0.5 → {risk_score}")
 
     severity = determine_rule_severity(risk_score, rules, config)
 
@@ -987,6 +1222,8 @@ def analyze_text(
     # === 阶段6：分类 ===
     classification = classify_content(text, kw_stats, rules, kb_matches)
     result["classification"] = classification
+    result["harm_line"] = classification.get("harm_line", "none")
+    result["harm_evidence"] = classification.get("harm_evidence", [])
 
     # === 阶段7：确定 content_type ===
     # 基于规则引擎 + 辟谣检测的初步 content_type 判定
@@ -996,16 +1233,22 @@ def analyze_text(
     elif severity in ("MEDIUM", "HIGH", "CRITICAL"):
         result["content_type"] = "PSEUDOSCIENCE"
         result["severity"] = severity
+    elif risk_score >= 0.5:
+        # 灰区：有一定风险但规则未触发 → 待LLM判定
+        result["content_type"] = "GRAY_ZONE"
+        result["severity"] = "NONE"
     else:
-        # 规则引擎判为无风险的涉科内容 → 默认 NORMAL_SCIENCE
         result["content_type"] = "NORMAL_SCIENCE"
         result["severity"] = "NONE"
 
     # === 阶段8：LLM二次判断 ===
-    # 只对规则引擎判定为可疑（PSEUDOSCIENCE）的内容调LLM
-    # 另外：规则引擎判为DEBUNKING但置信度不高的也调LLM确认
+    # 调用LLM的情况：
+    # 1. 规则引擎判为PSEUDOSCIENCE → 确认是否真伪科普
+    # 2. DEBUNKING但置信度不高 → 确认是否真辟谣
+    # 3. GRAY_ZONE（有风险但规则未触发）→ 让LLM判定类别
     needs_llm = (
         result["content_type"] == "PSEUDOSCIENCE"
+        or result["content_type"] == "GRAY_ZONE"
         or (result["content_type"] == "DEBUNKING" and debunk_conf < 0.7)
     )
 
@@ -1018,6 +1261,12 @@ def analyze_text(
             llm_severity = llm_result.get("severity", "NONE")
             llm_is_debunk = llm_result.get("is_debunking", False)
             llm_confidence = llm_result.get("confidence", 0.0)
+            llm_harm_line = llm_result.get("harm_line", "none")
+
+            # LLM 的 harm_line 判断覆盖规则引擎（如果 LLM 置信度高）
+            if llm_harm_line and llm_harm_line != "none" and llm_confidence >= 0.7:
+                result["harm_line"] = llm_harm_line
+                result["harm_evidence"] = [f"LLM判定:{llm_harm_line}"]
 
             # 强制约束
             if llm_content_type != "PSEUDOSCIENCE":
@@ -1027,7 +1276,9 @@ def analyze_text(
             old_sev = result["severity"]
 
             # LLM翻转逻辑
-            if llm_confidence >= 0.6:
+            # GRAY_ZONE 对 LLM 结果更宽容（降低阈值）
+            confidence_threshold = 0.4 if old_ct == "GRAY_ZONE" else 0.6
+            if llm_confidence >= confidence_threshold:
                 if llm_content_type != old_ct:
                     result["content_type"] = llm_content_type
                     result["severity"] = llm_severity
@@ -1061,6 +1312,7 @@ def analyze_text(
     result["requires_review"] = (
         (result["content_type"] == "PSEUDOSCIENCE" and result["severity"] == "MEDIUM")
         or (result["content_type"] == "PSEUDOSCIENCE" and not rules)
+        or result["content_type"] == "GRAY_ZONE"
     )
 
     return result
