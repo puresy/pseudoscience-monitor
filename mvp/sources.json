@@ -1,0 +1,160 @@
+{
+  "version": "1.0",
+  "updated": "2026-05-04",
+  "description": "伪科普监测源配置文件 — 种子词库 + 信息源 + 淘汰规则",
+
+  "platforms": {
+    "weibo": {
+      "name": "微博",
+      "enabled": true,
+      "crawler": "weibo_crawler.py",
+      "method": "移动端搜索API + Playwright",
+      "rate_limit": 3,
+      "max_per_keyword": 20
+    },
+    "bilibili": {
+      "name": "B站",
+      "enabled": true,
+      "crawler": "crawlers/bilibili.py",
+      "method": "Scrapling StealthyFetcher",
+      "rate_limit": 5,
+      "max_per_keyword": 20
+    },
+    "zhihu": {
+      "name": "知乎",
+      "enabled": false,
+      "crawler": "crawlers/zhihu.py",
+      "method": "待Scrapling重写",
+      "rate_limit": 5,
+      "max_per_keyword": 20
+    },
+    "weixin": {
+      "name": "微信公众号",
+      "enabled": false,
+      "crawler": "crawlers/weixin.py",
+      "method": "搜狗微信搜索",
+      "rate_limit": 10,
+      "max_per_keyword": 10
+    }
+  },
+
+  "keywords": {
+    "fear_marketing": {
+      "label": "恐惧营销类",
+      "items": [
+        "致癌物 不知道",
+        "致癌 食物",
+        "隐形杀手 健康",
+        "有毒 家里",
+        "猝死 原因",
+        "癌症 真相",
+        "中毒 症状"
+      ]
+    },
+    "fake_authority": {
+      "label": "伪权威+夸大类",
+      "items": [
+        "研究发现 治愈",
+        "某大学 研究 证实",
+        "100%有效",
+        "零副作用",
+        "永久改善",
+        "一招治好",
+        "包治百病",
+        "7天见效"
+      ]
+    },
+    "science_abuse": {
+      "label": "科学概念滥用类",
+      "items": [
+        "量子 治疗",
+        "纳米 养生",
+        "干细胞 修复",
+        "量子能量",
+        "负离子 治病",
+        "远红外 排毒",
+        "基因修复",
+        "细胞活化"
+      ]
+    },
+    "food_safety": {
+      "label": "食品安全谣言类",
+      "items": [
+        "食物相克 中毒",
+        "不能一起吃",
+        "农药残留 致癌",
+        "添加剂 有害",
+        "地沟油",
+        "激素 催熟",
+        "转基因 危害",
+        "隔夜菜 致癌",
+        "千滚水 有毒",
+        "反复烧开 亚硝酸盐"
+      ]
+    },
+    "health_myth": {
+      "label": "健康养生谣言类",
+      "items": [
+        "排毒 养生",
+        "酸碱体质",
+        "以形补形",
+        "偏方 治疗",
+        "秘方 根治",
+        "食疗 治愈",
+        "补气血 秘方",
+        "虫草 抗癌"
+      ]
+    },
+    "marketing": {
+      "label": "营销导向类",
+      "items": [
+        "限时优惠 健康",
+        "代理招募 保健",
+        "转发拯救",
+        "不转不是人",
+        "必看 救命"
+      ]
+    },
+    "hot_topics": {
+      "label": "高频谣言主题",
+      "items": [
+        "疫苗 有害",
+        "5G 辐射 致癌",
+        "微波炉 致癌",
+        "手机辐射 脑癌",
+        "wifi 致癌",
+        "塑料瓶 致癌",
+        "自来水 有毒",
+        "雾霾 排毒"
+      ]
+    }
+  },
+
+  "health_rules": {
+    "trial_days": 7,
+    "min_pseudo_for_adoption": 1,
+    "demote_threshold_days": 7,
+    "demote_threshold_pseudo": 0,
+    "auto_disable_threshold_days": 14,
+    "auto_disable_threshold_pseudo": 0
+  },
+
+  "rss_sources": {
+    "piyao": {
+      "name": "科学辟谣平台",
+      "url": "https://piyao.kepuchina.cn",
+      "rss": null,
+      "api": "/rumor/rumorajaxlist",
+      "enabled": true,
+      "method": "Jina Reader 兜底",
+      "note": "无RSS，通过Jina Reader抓取页面内容"
+    },
+    "kepuchina": {
+      "name": "科普中国",
+      "url": "https://www.kepuchina.cn",
+      "rss": null,
+      "enabled": false,
+      "note": "/rss 返回404，无可用RSS"
+    }
+  }
+}
