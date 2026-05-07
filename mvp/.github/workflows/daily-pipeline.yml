@@ -63,39 +63,17 @@ jobs:
             --limit "$LIMIT" \
             --config config.yaml
 
+      - name: 刷新 Dashboard
+        working-directory: ./mvp
+        run: |
+          echo "🔄 刷新看板数据..."
+          python refresh_dashboard.py
+
       - name: 生成看板数据摘要
         working-directory: ./mvp
         run: |
-          DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
-          ANALYSIS_FILE="data/analysis_${DATE}.jsonl"
-
-          if [ -f "$ANALYSIS_FILE" ]; then
-            echo "📊 分析结果统计:"
-            python3 -c "
-          import json
-          stats = {'total':0, 'categories':{}, 'severity':{}}
-          with open('$ANALYSIS_FILE') as f:
-              for line in f:
-                  d = json.loads(line)
-                  a = d.get('analysis', {})
-                  stats['total'] += 1
-                  llm = a.get('llm_analysis', {})
-                  cat = llm.get('category', '未分析') if isinstance(llm, dict) else '未分析'
-                  stats['categories'][cat] = stats['categories'].get(cat,0) + 1
-                  sev = a.get('severity', 'NONE')
-                  stats['severity'][sev] = stats['severity'].get(sev,0) + 1
-
-          print(f'总量: {stats[\"total\"]}')
-          print('分类:')
-          for k,v in sorted(stats['categories'].items(), key=lambda x:-x[1]):
-              print(f'  {k}: {v}')
-          print('严重度:')
-          for k,v in sorted(stats['severity'].items(), key=lambda x:-x[1]):
-              if v > 0: print(f'  {k}: {v}')
-          "
-          else
-            echo "⚠️ 分析文件不存在: $ANALYSIS_FILE"
-          fi
+          echo "📊 分析结果摘要:"
+          python refresh_dashboard.py 2>&1 | grep '^  '
 
       - name: 提交结果
         run: |
@@ -104,16 +82,16 @@ jobs:
 
           DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
 
-          # 添加新数据文件
-          git add mvp/data/*.jsonl
+          # 添加新数据文件 + 刷新后的看板
+          git add mvp/data/*.jsonl mvp/dashboard.html
 
           # 检查是否有变更
           if git diff --cached --quiet; then
             echo "✅ 没有新数据需要提交"
           else
-            git commit -m "📊 每日采集 $DATE [skip ci]"
+            git commit -m "📊 每日采集 $DATE"
             git push
-            echo "✅ 数据已提交"
+            echo "✅ 数据+看板已提交"
           fi
 
       - name: 上传分析结果
