@@ -418,6 +418,81 @@ footer {
   border-top: 1px solid var(--border);
   margin-top: 60px;
 }
+
+/* ====== 话题聚类 ====== */
+.topic-cluster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.topic-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  transition: all 0.2s;
+}
+.topic-card:hover {
+  border-color: var(--pseudo);
+  background: var(--pseudo-bg);
+}
+.topic-card .topic-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.topic-card .topic-count {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--pseudo);
+  margin: 4px 0;
+}
+.topic-card .topic-sev {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.topic-card .topic-sev span {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.topic-sev .crit { background: var(--critical-bg); color: var(--critical); }
+.topic-sev .high { background: var(--high-bg); color: var(--high); }
+.topic-sev .med { background: var(--medium-bg); color: var(--medium); }
+
+/* ====== 信源概览 ====== */
+.source-overview {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.source-stat {
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.source-stat .source-num {
+  font-size: 28px;
+  font-weight: 800;
+}
+.source-stat .source-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.source-stat.verified .source-num { color: var(--low); }
+.source-stat.unverified .source-num { color: var(--medium); }
+.source-stat.high-fans .source-num { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -534,8 +609,8 @@ footer {
     <div class="compare-card">
       <h3>伪科普严重度分布</h3>
       <div class="bar-chart">
-        <div class="bar-row"><span class="bar-label">CRITICAL</span><div class="bar-track"><div class="bar-fill critical" style="width:47%">45</div></div><span class="bar-value" style="color:var(--critical)">45</span></div>
-        <div class="bar-row"><span class="bar-label">HIGH</span><div class="bar-track"><div class="bar-fill high" style="width:46%">44</div></div><span class="bar-value" style="color:var(--high)">44</span></div>
+        <div class="bar-row"><span class="bar-label">CRITICAL</span><div class="bar-track"><div class="bar-fill critical" style="width:48%">45</div></div><span class="bar-value" style="color:var(--critical)">45</span></div>
+        <div class="bar-row"><span class="bar-label">HIGH</span><div class="bar-track"><div class="bar-fill high" style="width:47%">44</div></div><span class="bar-value" style="color:var(--high)">44</span></div>
         <div class="bar-row"><span class="bar-label">MEDIUM</span><div class="bar-track"><div class="bar-fill medium" style="width:5%">5</div></div><span class="bar-value" style="color:var(--medium)">5</span></div>
       </div>
     </div>
@@ -556,6 +631,94 @@ footer {
     <div class="improve-badge"><div class="num up">145</div><div class="desc">LLM翻转<br>规则→精判</div></div>
     <div class="improve-badge"><div class="num purple">56</div><div class="desc">危害主线检测<br>欺诈23+风评24+邪教9</div></div>
     <div class="improve-badge"><div class="num up">90</div><div class="desc">辟谣帖独立识别<br>占比 14.5%</div></div>
+  </div>
+</div>
+
+<!-- 3.5 谣言话题聚类 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🔥</span> 谣言话题热度 Top12</div>
+  <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">同一谣言被不同博主转发时自动归并，按提及次数排序</p>
+  <div class="topic-cluster-grid">
+    <div class="topic-card">
+      <div class="topic-name">💉 疫苗</div>
+      <div class="topic-count">12</div>
+      <div class="topic-sev"><span class="crit">CRIT 7</span><span class="high">HIGH 5</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">🧪 排毒</div>
+      <div class="topic-count">11</div>
+      <div class="topic-sev"><span class="crit">CRIT 3</span><span class="high">HIGH 8</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">☠️ 致癌</div>
+      <div class="topic-count">9</div>
+      <div class="topic-sev"><span class="crit">CRIT 5</span><span class="high">HIGH 4</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">⚛️ 量子</div>
+      <div class="topic-count">8</div>
+      <div class="topic-sev"><span class="crit">CRIT 7</span><span class="high">HIGH 1</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">🧬 干细胞</div>
+      <div class="topic-count">6</div>
+      <div class="topic-sev"><span class="crit">CRIT 2</span><span class="high">HIGH 4</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">🏥 中医</div>
+      <div class="topic-count">4</div>
+      <div class="topic-sev"><span class="crit">CRIT 1</span><span class="high">HIGH 3</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">📡 辐射</div>
+      <div class="topic-count">3</div>
+      <div class="topic-sev"><span class="crit">CRIT 1</span><span class="high">HIGH 1</span><span class="med">MED 1</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">⚖️ 酸碱</div>
+      <div class="topic-count">2</div>
+      <div class="topic-sev"><span class="crit">CRIT 1</span><span class="high">HIGH 1</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">✨ 能量</div>
+      <div class="topic-count">1</div>
+      <div class="topic-sev"><span class="crit">CRIT 1</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">🫁 肝经</div>
+      <div class="topic-count">1</div>
+      <div class="topic-sev"><span class="high">HIGH 1</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">🤸 拍八虚</div>
+      <div class="topic-count">1</div>
+      <div class="topic-sev"><span class="high">HIGH 1</span></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-name">📋 其他</div>
+      <div class="topic-count">36</div>
+      <div class="topic-sev"><span class="crit">CRIT 17</span><span class="high">HIGH 15</span><span class="med">MED 4</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 3.6 信源可信度概览 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🛡️</span> 信源可信度概览</div>
+  <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">94条伪科普的信源构成：认证号可信度加权，匿名号降低阈值</p>
+  <div class="source-overview">
+    <div class="source-stat verified">
+      <div class="source-num">48</div>
+      <div class="source-label">认证号 (51.1%)<br><span style="font-size:10px;color:var(--text-muted);">蓝V/黄V认证博主</span></div>
+    </div>
+    <div class="source-stat unverified">
+      <div class="source-num">46</div>
+      <div class="source-label">非认证号 (48.9%)<br><span style="font-size:10px;color:var(--text-muted);">普通用户/匿名号</span></div>
+    </div>
+    <div class="source-stat high-fans">
+      <div class="source-num">46</div>
+      <div class="source-label">粉丝&gt;10万 (48.9%)<br><span style="font-size:10px;color:var(--text-muted);">高影响力传播节点</span></div>
+    </div>
   </div>
 </div>
 
