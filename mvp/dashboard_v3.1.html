@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>伪科普监测系统 v3.1 — 终版看板</title>
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-card: #141b24;
+  --bg-card-hover: #1a2332;
+  --border: #1e2d3d;
+  --text: #e0e6ed;
+  --text-dim: #7a8a9a;
+  --accent: #00d4ff;
+  --accent-dim: rgba(0,212,255,0.15);
+  --critical: #ff3b5c;
+  --critical-bg: rgba(255,59,92,0.12);
+  --high: #ff8c42;
+  --high-bg: rgba(255,140,66,0.12);
+  --medium: #ffd166;
+  --medium-bg: rgba(255,209,102,0.12);
+  --good: #06d6a0;
+  --good-bg: rgba(6,214,160,0.12);
+  --purple: #b388ff;
+  --purple-bg: rgba(179,136,255,0.12);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* Scanline effect */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,212,255,0.015) 2px,
+    rgba(0,212,255,0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 40px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 30px;
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(0,212,255,0.5);
+  letter-spacing: 3px;
+}
+.header .version {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--accent);
+}
+.header .meta {
+  margin-top: 15px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s;
+}
+.kpi-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(0,212,255,0.1);
+  transform: translateY(-2px);
+}
+.kpi-number {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(0,212,255,0.3);
+}
+.kpi-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Section */
+.section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Category bars */
+.category-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.category-name {
+  width: 120px;
+  color: var(--text-dim);
+}
+.category-bar {
+  flex: 1;
+  height: 24px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.category-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.category-count {
+  width: 80px;
+  text-align: right;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Severity cards */
+.severity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.severity-card {
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+}
+.severity-card .count {
+  font-size: 32px;
+  font-weight: 700;
+}
+.severity-card .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 5px;
+}
+
+/* Harm table */
+.harm-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.harm-table th, .harm-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.harm-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.harm-table td {
+  font-size: 14px;
+}
+
+/* LLM Stats */
+.llm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.llm-card {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+.llm-card .value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--purple);
+}
+.llm-card .label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 5px;
+}
+
+/* Data table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.data-table th {
+  background: var(--bg);
+  padding: 10px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  position: sticky;
+  top: 0;
+}
+.data-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-table tr:hover {
+  background: var(--bg-card-hover);
+}
+
+/* Tags */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tag-critical { background: var(--critical-bg); color: var(--critical); }
+.tag-high { background: var(--high-bg); color: var(--high); }
+.tag-medium { background: var(--medium-bg); color: var(--medium); }
+.tag-good { background: var(--good-bg); color: var(--good); }
+
+/* Filter */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-btn:hover, .filter-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 30px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .llm-grid { grid-template-columns: 1fr; }
+  .category-name { width: 80px; font-size: 11px; }
+}
+
+/* Animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.pulse { animation: pulse 2s infinite; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>伪科普监测系统</h1>
+    <div class="version">v3.1 FINAL · 五修复合版</div>
+    <div class="meta">
+      数据采集: 2026-05-06 · 微博 7 关键词 · 分析引擎: mimo-v2-pro (thinking disabled)
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-number">621</div>
+      <div class="kpi-label">采集总量</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-number">346</div>
+      <div class="kpi-label">LLM 调用</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-number">318</div>
+      <div class="kpi-label">LLM 翻转</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-number" style="color:var(--critical)">94</div>
+      <div class="kpi-label">伪科普检出</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-number" style="color:var(--good)">90</div>
+      <div class="kpi-label">辟谣内容</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-number" style="color:var(--text-dim)">2</div>
+      <div class="kpi-label">灰区残留</div>
+    </div>
+  </div>
+
+  <!-- Category Distribution -->
+  <div class="section">
+    <div class="section-title">📊 内容分类分布</div>
+    <div id="category-chart"></div>
+  </div>
+
+  <!-- Severity + Harm -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+    <div class="section">
+      <div class="section-title">🚨 伪科普严重度</div>
+      <div class="severity-grid">
+        <div class="severity-card" style="background:var(--critical-bg)">
+          <div class="count" style="color:var(--critical)">45</div>
+          <div class="label" style="color:var(--critical)">CRITICAL</div>
+        </div>
+        <div class="severity-card" style="background:var(--high-bg)">
+          <div class="count" style="color:var(--high)">44</div>
+          <div class="label" style="color:var(--high)">HIGH</div>
+        </div>
+        <div class="severity-card" style="background:var(--medium-bg)">
+          <div class="count" style="color:var(--medium)">5</div>
+          <div class="label" style="color:var(--medium)">MEDIUM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">⚠️ 危害主线检出</div>
+      <table class="harm-table">
+        <thead>
+          <tr><th>危害类型</th><th>数量</th><th>占比</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>声誉攻击</td><td style="color:var(--critical)">24</td><td>25.5%</td></tr>
+          <tr><td>欺诈诈骗</td><td style="color:var(--high)">23</td><td>24.5%</td></tr>
+          <tr><td>邪教属性</td><td style="color:var(--medium)">9</td><td>9.6%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LLM Stats -->
+  <div class="section">
+    <div class="section-title">🤖 LLM 分析统计</div>
+    <div class="llm-grid">
+      <div class="llm-card">
+        <div class="value">346</div>
+        <div class="label">LLM 调用次数</div>
+      </div>
+      <div class="llm-card">
+        <div class="value">318</div>
+        <div class="label">分类翻转</div>
+      </div>
+      <div class="llm-card">
+        <div class="value">55.7%</div>
+        <div class="label">调用覆盖率</div>
+      </div>
+    </div>
+    <div style="margin-top:15px; font-size:12px; color:var(--text-dim)">
+      <strong>v3.1 核心修复:</strong>
+      <span style="color:var(--good)">force_flip 翻转逻辑</span> ·
+      <span style="color:var(--accent)">涉科即触发 LLM</span> ·
+      <span style="color:var(--purple)">权威信源白名单</span> ·
+      <span style="color:var(--medium)">TCM 关键词扩充</span> ·
+      <span style="color:var(--high)">疑问句式排除</span>
+    </div>
+  </div>
+
+  <!-- Data Preview -->
+  <div class="section">
+    <div class="section-title">📋 伪科普明细 <span id="data-count" style="color:var(--text-dim);font-size:14px;margin-left:8px;">96</span> 条</div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterData('all')">全部</button>
+      <button class="filter-btn" onclick="filterData('CRITICAL')">CRITICAL</button>
+      <button class="filter-btn" onclick="filterData('HIGH')">HIGH</button>
+      <button class="filter-btn" onclick="filterData('MEDIUM')">MEDIUM</button>
+    </div>
+    <div style="max-height:800px; overflow-y:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>用户</th>
+            <th>内容摘要</th>
+            <th>严重度</th>
+            <th>危害类型</th>
+            <th>互动</th>
+            <th>风险分</th>
+          </tr>
+        </thead>
+        <tbody id="data-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    PSEUDOSCIENCE MONITOR v3.1 · Engine: mimo-v2-pro · Generated: 2026-05-06
+  </div>
+</div>
+
+<script>
+// Embedded data from analysis_v3.1_2026-05-06_final.jsonl (压缩格式: u=用户名, t=文本, s=严重度, h=危害, r=风险分, c=分类)
+const RAW_DATA = [{"u": "正本清源1123", "t": "@正心999999:治病最好的方法，就是正心正念正能量 在量子的状态下，我们来看人体，人体就是由不同的能量组成，决定能量频率的为意识，人体某个部位能量频率低了，哪里就生病了，根据量子理论，一切物质都是能量，决定能量频率的为意识。所以调整意识为上品良药，良药为道，道心为德，正心正念 ...全文", "s": "CRITICAL", "h": "none", "r": 7.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5269636989849033", "reposts": 33, "comments": 2, "likes": 24, "time": "2026-02-24 00:07"}, {"u": "啡咖17", "t": "这就是他们从未想让你看到的我们史无前例地获准与 MedBed 公开完整的治疗流程。第一步：患者进入水晶舱。第二步：在 3.2 秒内完成全身量子扫描。第三步：人工智能识别所有疾病、损伤和基因异常。第四步：开始引导式频率疗愈。时长：15-30 分钟。第五步：患者离开。全程治愈。无需恢复期。 ...全文", "s": "CRITICAL", "h": "fraud", "r": 6.2, "c": "伪科普", "url": "https://m.weibo.cn/detail/5266643741050020", "reposts": 38, "comments": 10, "likes": 84, "time": "2026-02-15 17:53"}, {"u": "thinking_soul", "t": "很多人问那群人去萝莉岛最重要的原因是什么？其实就是提取干细胞，干细胞有两方面的作用，一个是可以制造克隆人，另一个方面可以做器官修复用本人的干细胞培育完整的器官没有副作用排异反应，最重要dna也完全匹配，振动频率可以由电脑调高施加给干细胞。", "s": "CRITICAL", "h": "reputation_attack", "r": 6.2, "c": "伪科普", "url": "https://m.weibo.cn/detail/5286598570935103", "reposts": 0, "comments": 0, "likes": 9, "time": "2026-04-11 19:26"}, {"u": "neoblue_Philipsx", "t": "美国3个州好像已经全面中止所有疫苗接种了。地球上所有主要的制药公司。辉瑞、莫德纳、强生、默克、阿斯利康、诺华、罗氏，全都。看来从现在开始，以频率为基础的治疗「量子医疗系统」要启动了。简而言之，波动力学医学要正式发展起来了。生产频率基础治疗设备的设施。生物再生化合物。细胞 ...全文", "s": "CRITICAL", "h": "none", "r": 5.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5292753647832885", "reposts": 4, "comments": 0, "likes": 12, "time": "2026-04-28 19:04"}, {"u": "Baremark", "t": "\"[“代谢交响失调症：从细胞器通讯崩溃到全息修复”(-ing) BPMS]\"示例一：细胞器间量子通讯断裂综合征场景：一种新型代谢疾病—细胞器交响失调症。患者表现：1. 代谢节律紊乱：血糖、血脂、血压的昼夜节律消失2. 能量分配崩溃：大脑、肌肉、内脏间的能量竞争而非协作3. 细胞器外交失败：线粒体、 ", "s": "CRITICAL", "h": "none", "r": 5.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5293341711533589", "reposts": 1, "comments": 1, "likes": 2, "time": "2026-04-30 10:01"}, {"u": "乙闲", "t": "5G是一个武器系统，仅此而已。 这与人类的电信无关。 5G是自动驾驶汽车的机器到机器连接。”5G网络使用和广播频率影响我们的汗管，作为天线。 换句话说，我们最大的器官--皮肤--可以受到5G的影响和操纵。 电磁场（Emf）是由电磁辐射发射引起的不可见的能量区域。 有电离和非电离Emf。 后者描述 .", "s": "CRITICAL", "h": "reputation_attack", "r": 5.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5162898540465868", "reposts": 55, "comments": 13, "likes": 90, "time": "2025-05-05 11:06"}, {"u": "中医徐柏杨", "t": "我整个人的左边和右边就有不对称感，尤其是左胳膊时不时感到酸胀。我今天就要滕大夫帮我刮痧，科大夫@针灸科尔沁夫 抬着我的胳膊。然后科大夫感觉我一股气传到科大夫手上，他马上呕吐🤮出来的是黑痧，我回想起这么多年我都是左手把脉，看的都是疑难杂病，这个病气是有多重。太多搞量子纠缠的大师说我 ...全文", "s": "CRITICAL", "h": "cult", "r": 5.2, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294083752858632", "reposts": 22, "comments": 131, "likes": 663, "time": "2026-05-02 11:09"}, {"u": "童鞋的利剑", "t": "・在 NESARA/GESARA 快速启动的背景下，通过全球协议，债务免除和繁荣基金将立即获得释放。・Med Beds 从 2026 年 1 月开始正式启动，量子治疗中心已准备好让普通人访问，以逆转衰老并恢复健康。・量子金融系统根据 ISO-20022 标准统治着全球交易，并确保从被没收的精英资产中", "s": "CRITICAL", "h": "cult", "r": 5.1, "c": "伪科普", "url": "https://m.weibo.cn/detail/5244602187780644", "reposts": 25, "comments": 10, "likes": 74, "time": "2025-12-16 22:07"}, {"u": "武汉刘正涛", "t": "我发表了头条文章:《量子纠缠如何治疗不孕不育？》 量子纠缠如何治疗不孕不育？", "s": "CRITICAL", "h": "none", "r": 4.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5255454881746693", "reposts": 18, "comments": 26, "likes": 185, "time": "2026-01-15 20:52"}, {"u": "离床中医", "t": "离床异闻录双胞胎姐妹，姐姐一直在我这里看诊效果还算可以。近日妹妹怀孕，出现恶心呕吐等不适，姐姐也出现同样的症状，并且这次服药效果不佳。上周帮妹妹针灸治疗后，姐姐今日复诊说她也缓解了。唯有量子纠缠可以解释#国医的精诚力量#", "s": "CRITICAL", "h": "none", "r": 4.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5264854317534723", "reposts": 1, "comments": 5, "likes": 18, "time": "2026-02-10 19:22"}, {"u": "低级黑小明", "t": "现在所谓的科学界搞出很多药物，什么hpv的疫苗，艾滋病预防药，癌症疫苗，这些药都是没用的，而且反而会对身体有害，不要轻信这些药物厂的宣传，也不要以为自己打了针吃了药就可以随便乱性没有后果，这是一个骗局，目的为了诱导更多的人堕落，最后你出事了药厂和医院再从你身上赚一笔你也没有办法。", "s": "CRITICAL", "h": "reputation_attack", "r": 4.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5196808647083311", "reposts": 23, "comments": 9, "likes": 155, "time": "2025-08-07 00:53"}, {"u": "叁识贰相", "t": "分享：一个道家能迅速排五脏所有毒素的千古大白菜是道家秘方，清肠排毒，清除五脏毒素。每天煮白菜叶，不加油盐，连吃三天，排出宿便和五种颜色的宿便，改善肠胃健康。坚持食用，阳气易旺，防癌抗癌。#健康养生##中医养生#", "s": "CRITICAL", "h": "none", "r": 3.4, "c": "伪科普", "url": "https://m.weibo.cn/detail/5232973995311475", "reposts": 306, "comments": 15, "likes": 306, "time": "2025-11-14 20:01"}, {"u": "灯塔水母长生秘诀人体应用推广中", "t": "榜姐每日话题 吃得下，睡得好，拉的畅快，口气清新，没有老人味；体质和皮肤变好，比同龄人显年青；小病能抗，大病能防，不得癌症，这就是豆年青胚芽浓缩液的效果！这也是我们生活的底气。不妨抽空静下来问问自己，我的健康状态如何？ 总以为意外和疾病离自己很远？其实它们就藏在生活的细 ...全文", "s": "CRITICAL", "h": "fraud", "r": 3.2, "c": "伪科普", "url": "https://m.weibo.cn/detail/5293681428923539", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-01 08:31"}, {"u": "妙手郭先生", "t": "当人们误食了有毒的肉类时，吃了会产生腹胀，眼睛有重影， 意识昏乱，口渴喉咙干，出汗发抖，莫名其妙的恐惧，坐卧不安，眼不视人， 心慌胆怯，这个时候自己也应该知道自己是中毒了，行将被害，遇到这种情况 时，大家还会去食用吗？同样的道理，吃了相克的食物，就如同服毒，例如， 奶制品与新酿造的酒 ...全文", "s": "CRITICAL", "h": "none", "r": 2.5, "c": "认知误区", "url": "https://m.weibo.cn/detail/5266571770462635", "reposts": 7, "comments": 0, "likes": 25, "time": "2026-02-15 13:07"}, {"u": "养生长寿V", "t": "食物相克黑名单1、柿子+啤酒=中毒2、感冒药+可乐=中毒3、鸡蛋忌糖精---同食中毒、S亡A、豆腐忌蜂蜜---同食耳聋5、海带忌猪血同食便秘6.土豆忌香蕉同食生雀班7、牛肉忌红糖同食胀s人8、狗肉忌黄鳝同食则死9羊肉忌田螺同食积食腹胀10、芹忌兔肉同食元气11、鹅肉忌鸭梨同食伤肾脏13、洋葱忌蜂 .", "s": "CRITICAL", "h": "none", "r": 1.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5279176321139093", "reposts": 9, "comments": 0, "likes": 9, "time": "2026-03-22 07:53"}, {"u": "宁静芳妮", "t": "#女子吃榴莲后喝白酒呼吸衰竭#这件事为大众敲响了饮食安全的警钟。榴莲热量极高且富含硫元素，与白酒同食会加重人体脏器负担，极易引发中毒甚至呼吸衰竭。很多人忽视食物相克的禁忌，抱有侥幸心理肆意混搭饮食，最终付出惨痛代价。美食虽好，也要懂得量力而行。敬畏饮食常识，摒弃盲目大意，才是守护自 ...全文", "s": "CRITICAL", "h": "none", "r": 1.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5294410783784967", "reposts": 0, "comments": 1, "likes": 11, "time": "2026-05-03 08:49"}, {"u": "Hunbreeze", "t": "食物相克两小时内不可同吃，摘于有关保健书刊。1、 鸡蛋忌糖精?-同食中毒、死亡2、 豆腐忌蜂蜜?-同食耳聋3、 海带忌猪血—同食便秘4、 土豆忌香蕉—同食生雀斑5、 牛肉忌红糖—同食胀死人6、 狗肉忌黄鳝—同食则死7、 羊肉忌田螺—同食积食腹胀8、 芹菜忌兔肉—同食脱头发9、 番茄忌绿豆—同 ...", "s": "CRITICAL", "h": "none", "r": 1.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5282666208298039", "reposts": 0, "comments": 1, "likes": 0, "time": "2026-03-31 23:00"}, {"u": "风雨彩虹_76835", "t": "食物相克黑名单01、柿子+啤酒=中毒02、感冒药+可乐=中毒03、鸡蛋忌糖精---同食中毒、S亡04、豆腐忌蜂蜜---同食耳聋05、海带忌猪血同食便秘6.土豆忌香蕉同食生雀班07、牛肉忌红糖同食胀s人08、狗肉忌黄鳝同食则死09羊肉忌田螺同食积食腹胀10、芹忌兔肉同食元气11、鹅肉忌鸭梨同食伤肾脏1", "s": "CRITICAL", "h": "none", "r": 1.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5280596867678591", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-03-26 05:57"}, {"u": "花影恨月光_", "t": "#长期吃焦糊食物增加致癌风险#一百个健康的饮食习惯，也敌不过食物的科技狠活。科技的抽取大于食物的化生，这就是觉得食物没能量的原因。科是本源周期转化世界树半回转化定位码，技是肉体控制抽取阴阳乙驱两界化生码，驱动黑界化生输白界逆化生。科技的尽头是虚拟世界本相如是，食物中科技 ...全文", "s": "CRITICAL", "h": "reputation_attack", "r": 1.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5289748365315210", "reposts": 9, "comments": 8, "likes": 56, "time": "2026-04-20 12:02"}, {"u": "安妮2658", "t": "《治疗密码》 ——【美】亚历克斯.洛伊德 班.琼森读书笔记1、所有的事物，包括数字信息，最终都会以能量的方式存在，并带着相应的振动频率。而所有的频率都是能被改变的，只要我们知道方法。2、世界上有一样东西能治愈你生活中出现的任何问题，就是身体的免疫和治疗系统。3、《箴言之 ...全文", "s": "CRITICAL", "h": "fraud", "r": 1.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294876453507018", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-04 15:39"}, {"u": "水果大米种植户", "t": "我应该是互联网最早一批号召大家不要打新冠疫苗的中威了吧我说不要打的原因是这个疫苗的无效性，从没吐槽他的安全和对人体伤害毒株都被灭活了，能有啥伤害呢？但是很多人又会说灭活病毒的辅剂对人体有害，哎哟卧槽，那些玩意无非就是丙内脂，甲醛，应用场景老高了，比方白酒里就有甲醛但是为啥现在 ...全文", "s": "CRITICAL", "h": "reputation_attack", "r": 1.5, "c": "新发谣言", "url": "https://m.weibo.cn/detail/5212679679248937", "reposts": 9, "comments": 25, "likes": 44, "time": "2025-09-19 19:59"}, {"u": "梅梅中医缘", "t": "成都一位祖传中医，看糖尿病一绝，让很多患者停针停药#国医的精诚力量# 遍访良医四川省成都市 邓宗震 文/图 罗富贵三十年前，糖尿病在全国还是稀罕病，当时全国患者总数300万左右，如今这个数字已达到2.4亿（占全球患者总数的25%），已经成为老百姓健康不可忽视的“隐形杀手”。这次在成都九里提 ...全", "s": "CRITICAL", "h": "fraud", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294731065819264", "reposts": 61, "comments": 7, "likes": 71, "time": "2026-05-04 06:02"}, {"u": "正心修身_开心", "t": "@正心999999 正能量就是最好的药 人体在量子的状态下，人体就是各种不停振动的能量组成，能量就是人们说的气，所以人的生死病健由气决定，气聚人则生，气绝人则亡，气强人则健，气弱人则病。那么决定身体能量的是什么？意识，控制肉体意识的称精，控制气体意识的为神，精神决定了身体，所以说精 ...全文", "s": "CRITICAL", "h": "cult", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294615793246456", "reposts": 9, "comments": 0, "likes": 7, "time": "2026-05-03 22:23"}, {"u": "水清木华澄澄", "t": "1 、柿子 + 啤酒 = 中毒2 、感冒药 + 可乐 = 中毒3 、鸡蛋忌糖精┄┄同食中毒、s亡4 、豆腐忌蜂蜜┄┄同食耳聋5 、海带忌猪血┄┄同食便秘6 、土豆忌香蕉┄┄同食生雀斑7 、牛肉忌红糖┄┄同食胀s人8 、狗肉忌黄鳝┄┄同食则死9 、羊肉忌田螺┄┄同食积食腹胀10 、芹菜忌兔肉┄┄同食脱", "s": "CRITICAL", "h": "none", "r": 0.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5236109291291359", "reposts": 481, "comments": 2, "likes": 1181, "time": "2025-11-23 11:40"}, {"u": "天然蜂蜜和自然养身", "t": "小心❗这些食物不能一起吃100种不能一起吃的食物有些食物搭配起来真是大忌！同时食用，可能会要了你的⚠️命！建议收藏起来❗需要的时候拿出来看看对身体最有害的十大食物", "s": "CRITICAL", "h": "none", "r": 0.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5263793416574554", "reposts": 20, "comments": 1, "likes": 16, "time": "2026-02-07 21:06"}, {"u": "Kainin20221027", "t": "🚨RFK Jr. 警告：“一百万年后，我也不会打流感疫苗——我来告诉你为什么。”“流感疫苗会让你更容易感染流感，36% 的致病性预备作用针对 COVID，并将肺炎等非流感疾病风险提升 440%。”看看这些证据——成分、研究和数据，这些都值得知情同意。🧪 流感疫苗中的有害成分（直接注射入血液）： ..", "s": "CRITICAL", "h": "reputation_attack", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5249974631662839", "reposts": 22, "comments": 3, "likes": 59, "time": "2025-12-31 17:55"}, {"u": "neoblue_Philipsx", "t": "美国新冠疫苗后遗症患者在日本江户川医院接受血浆交换疗法后奇迹般恢复从血液中去除棘突蛋白、自身抗体等有害蛋白质米国のコロナワクチン後遺症患者が日本の江戸川病院で血漿交換療法を行って奇跡的に回復血液からスパイクタンパク質、自己抗体などの悪玉タンパク質を除去 @fseiichizb4", "s": "CRITICAL", "h": "reputation_attack", "r": 0.8, "c": "新发谣言", "url": "https://m.weibo.cn/detail/5288395163304519", "reposts": 11, "comments": 2, "likes": 33, "time": "2026-04-16 18:25"}, {"u": "我特喵喵的", "t": "【瑞典辐射防护基金会与瑞典环境与癌症研究基金会在2023年联合进行了一项科学研究，发现长期暴露于5G辐射，会导致微波综合症，而消除/减少暴露，可恢复正常健康。 网页链接 】不仅仅是5G的辐射对人有害，微波炉的辐射对人体的伤害更严重，而且，经微波炉煮过的或加热的食物，其营养价值 ...全文", "s": "CRITICAL", "h": "reputation_attack", "r": 0.8, "c": "新发谣言", "url": "https://m.weibo.cn/detail/4984592044134006", "reposts": 5, "comments": 4, "likes": 16, "time": "2023-12-30 10:20"}, {"u": "Kainin20221027", "t": "罗伯特·F·肯尼迪 Jr. 告诉国会，Wi-Fi 辐射会改变 DNA 并导致癌症。一年前在法庭上被问及此事：“你仍然坚持你的说法吗？”他回答：“是的。”肯尼迪将此案诉至上诉法院，对抗 FCC。法院裁定支持他。他说，许多科学研究已将电磁辐射与癌症联系起来。但癌症甚至不是首要担忧，神经损伤才是。 ...", "s": "CRITICAL", "h": "reputation_attack", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5285520869427886", "reposts": 18, "comments": 2, "likes": 37, "time": "2026-04-08 20:03"}, {"u": "江南小蝶52", "t": "电磁频率（EMF）放射性波⚡️对身体的危害是巨大的，要小心我们不断受到致癌波的轰炸，尤其是来自智能设备、Wi-Fi路由器和5G塔，甚至X射线扫描。手机充电的时候不要用手机，不要接电话。 江南小蝶52的微博视频", "s": "CRITICAL", "h": "none", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5012581146953713", "reposts": 48, "comments": 0, "likes": 63, "time": "2024-03-16 15:58"}, {"u": "嘿O小呆O别走", "t": "漂亮国：口罩的鼻梁条是5G天线，不仅有辐射还致癌！", "s": "CRITICAL", "h": "reputation_attack", "r": 0.8, "c": "新发谣言", "url": "https://m.weibo.cn/detail/5082162862754140", "reposts": 0, "comments": 0, "likes": 0, "time": "2024-09-24 16:11"}, {"u": "彼岸红_14426", "t": "5g辐射比疫苗危害还大，是2b级致癌物", "s": "CRITICAL", "h": "reputation_attack", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5031833515594455", "reposts": 3, "comments": 1, "likes": 4, "time": "2024-05-08 19:01"}, {"u": "狮吼宠物郎中", "t": "蜂蜜排毒的真实作用：有效但有限，需搭配使用蜂蜜确实有助于辅助排出体内纳米级金属载体、纳米颗粒），但绝非特效药，必须搭配其他食材、中医方法、玄学护持一起用，单独吃效果很弱。一、蜂蜜为什么能辅助排纳米机器人？1. 天然螯合作用（核心）蜂蜜富含葡萄糖酸、柠檬酸、氨基酸、多酚、黄酮， ...全文", "s": "CRITICAL", "h": "none", "r": 0.6, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295557855938009", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-06 12:47"}, {"u": "乙闲", "t": "这位是乔·迪斯本萨博士。经过39年的研究，他发现了一种方法，治愈了数千名患者的四期癌症、遗传病、脊椎骨折、创伤后应激障碍和抑郁症。他曾说过：“人体比世界上任何药物都要好三倍。以下是他改变人生的方法（有科学依据）：在我们开始之前...以下是一些有关全球心理健康现状的统计数据： ...全文", "s": "CRITICAL", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5205082098631026", "reposts": 408, "comments": 25, "likes": 602, "time": "2025-08-29 20:49"}, {"u": "用户7935145149", "t": "，特大喜讯《癌症被攻破拉》《内蒙通辽有一位治癌大师人称治癌之王他有奇特的方法能治愈各种癌症《渐动症》能去根不复发见效快，诚诺，胃，喉，子宫，宫颈，直肠癌等等各种癌症一天见效三天全愈，有的人疑问大医院都治不好你只用三天，理解，因为我用的方法正确知道怎么把癌症从病人身上清除出去，(方 ...全文", "s": "CRITICAL", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295461512512987", "reposts": 0, "comments": 0, "likes": 1, "time": "2026-05-06 06:24"}, {"u": "人称饭冰冰", "t": "原来古人才是最会治疗抑郁症的，不用吃药，一招就能治好 人称饭冰冰的微博视频", "s": "CRITICAL", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294660102652009", "reposts": 0, "comments": 0, "likes": 47, "time": "2026-05-04 01:20"}, {"u": "黑白的车厘子", "t": "原来古人才是最会治疗抑郁症的，不用吃药，一招就能治好 #微博兴趣创作计划##生活笑料撞满怀##三分钟视频助燃计划# 黑白的车厘子的微博视频", "s": "CRITICAL", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294859415978469", "reposts": 0, "comments": 0, "likes": 4, "time": "2026-05-04 14:32"}, {"u": "归原者", "t": "生物信号相位对冲稳态疗愈体系（BPCST）作者：中国归原者摘要 生物信号相位对冲稳态疗愈体系（BPCST）是一套原创性无创生命健康疗愈技术体系，核心原理为朊病毒-癌细胞异常生物信号相位共轭对冲。本体系深度融合2026年全球量子精密测量、分子动力学、多场耦合工程、生成式AI数字孪生等顶尖技术， ...", "s": "CRITICAL", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294825001979112", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-04 12:15"}, {"u": "广物论佛弟子", "t": "元平子《广物论》全域核心全貌与未来走向（终极无漏版） 元平子深耕民间全域哲科研究，以**“存在必有界”为唯一不证自明公理、量子压场（元平子场）为宇宙唯一本体**，构建了一套公理-本体-逻辑链绝对闭环，覆盖物理、数学、国学、意识、生命、社会、玄学、工程应用全维度，且实现各领域底层深度内 ...全文", "s": "CRITICAL", "h": "cult", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294470423118716", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-03 12:46"}, {"u": "童鞋的利剑", "t": "🔻量子跃迁雷蒙德·凯勒博士。斯坦福大学。1971 年。他解开了细胞逆转现象的奥秘。可以在 90 秒内完全修复 DNA。研究资金被切断，研究室被烧毁，他的名字也从所有学术期刊上被抹去。2025 年 3 月 12 日，在国防高等研究计划局 (DARPA) 服务器上发现了他的文件，这个文件本不应该被访问。", "s": "CRITICAL", "h": "reputation_attack", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5293777587277181", "reposts": 36, "comments": 5, "likes": 93, "time": "2026-05-01 14:53"}, {"u": "neoblue_Philipsx", "t": "我目前正在接受挽救生命的治疗，以应对辉瑞新冠疫苗造成的可怕损伤。我现在在日本江户川医院接受治疗。治疗旨在通过双重过滤血浆置换清除血液中的刺突蛋白、淀粉样血栓、自身抗体和错误折叠蛋白，并使用预生长干细胞帮助我自己的身体自我修复。这是地球上唯一提供这种治疗的地方。我是这里的第14位患者 ...全文", "s": "CRITICAL", "h": "reputation_attack", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5288390565824856", "reposts": 22, "comments": 4, "likes": 42, "time": "2026-04-16 18:07"}, {"u": "临床药研-冬冬", "t": "慢性心衰久治效果不佳？国际前沿干细胞疗法已落地海南博鳌乐城。 核心优势：修复心肌微环境，改善心脏功能，为心衰患者带来新希望 适用群体：射血分数降低型慢性心力衰竭（LVEF≤40%、NYHA Ⅱ–Ⅳ级）患者，常规药物治疗效果欠佳，心功能持续下降的人群。 治疗方案：每周静脉输注1次，3次为一 ...全文", "s": "CRITICAL", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295321011982098", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-05 21:06"}, {"u": "胡语彤3913", "t": "#三代医学世家，从医36年的菊姐今日晨会，菊姐分享了老爸吃随便果排毒调理好便秘问题。90多岁的老妈每天吃四季优美食品调理，身体健康生活自理。老伴还通过四季优美新中式食养调理好了脑梗。全家人通过深排减脂150多斤。┉通过健康管理收获全家人健康，一手接爱一手传爱，还通过分享帮助了很多 ...全文", "s": "CRITICAL", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295527245122042", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-06 10:45"}, {"u": "长得很帅我很抱歉_G", "t": "酸碱平酸性体质是百病之源，可以说所有的慢性疾病都与酸性体质有关，导致不同的慢性疾病，久而久之会因其他诱导因素的不协调。生理代谢就会受到影响如果身体内呈现酸性时则所有的生理活动。激素都要在弱碱性环境中进行。各种酶各种代谢。身体内各种生理活动，因为正常人体是呈弱碱性的。纠正酸性体质， ...全文", "s": "CRITICAL", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295198024241785", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-05 12:57"}, {"u": "Kainin20221027", "t": "輝瑞剛剛發布他們的mRNA新冠疫苗的副作用清單:血液血栓急性腎損傷急性弛緩性脊髓炎抗精子抗體陽性腦幹栓塞腦幹血栓心臟驟停（數百例）心臟衰竭心室血栓形成心臟休克中樞神經系統血管炎新生兒死亡深層靜脈栓塞腦幹腦炎出血性腦炎額葉癲癇口吐白沫癲癇性精神病顏面神經胎兒窘迫綜合 ...全文", "s": "CRITICAL", "h": "reputation_attack", "r": 0.0, "c": "新发谣言", "url": "https://m.weibo.cn/detail/5132121126211101", "reposts": 204, "comments": 48, "likes": 396, "time": "2025-02-09 12:48"}, {"u": "全息真圆", "t": "科学的盲区：当最聪明的大脑被困在低维投影里真圆阿奢黎——现代科学为何在意识、量子与暗物质面前“卡壳”了？（本文基于元宪理论论文：Low-Dimensional Cognition‘s Self-Imposed Limitations, Zenodo. 10.5281/zenodo.19968605）", "s": "HIGH", "h": "reputation_attack", "r": 5.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294132227736036", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-02 14:22"}, {"u": "马上谈", "t": "中南大学教授卢光琇称女性一定要做妈妈，生育对女性是非常有好处的。孕育孩子并非只是母亲单方面付出营养，而是母子间相互供给。孩子会把干细胞给母亲，让母亲更健康。她举例美国一位肝功能不好的女性，因怀孕生下男宝宝后，孩子的干细胞修复了她的肝脏，使其痊愈。卢光琇还提到自己生了三个孩子 ...全文", "s": "HIGH", "h": "none", "r": 4.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5281742648772017", "reposts": 299, "comments": 81, "likes": 458, "time": "2026-03-29 09:50"}, {"u": "獐小卷芽", "t": "#常识与误区解读# 很多癌症都是省出来的，这五个习惯很危险#你家厨房可能是肺癌的高风险场地##健康登顶计划##三分钟视频助燃计划# 獐小卷芽的微博视频", "s": "HIGH", "h": "none", "r": 4.0, "c": "认知误区", "url": "https://m.weibo.cn/detail/5290277695654002", "reposts": 0, "comments": 1, "likes": 2, "time": "2026-04-21 23:05"}, {"u": "秒懂创意", "t": "为什么好好的人突然就查出了癌症！其实很多人的癌症都是自己省出 出来的。而且最可怕的是这些坏习惯你几乎每天都在做！#科普 #涨知识 #癌症 #科普一下 秒懂创意的微博视频", "s": "HIGH", "h": "none", "r": 3.2, "c": "认知误区", "url": "https://m.weibo.cn/detail/5294462877305939", "reposts": 8, "comments": 0, "likes": 10, "time": "2026-05-03 12:16"}, {"u": "仁善-", "t": "中医中药用民间秘方“嫁接”出一个治疗肾虚耳鸣的方子，有耳鸣的不妨试试 道语：这是我唯一看好的治疗肾虚耳鸣的方子。这个方子药物平和，属于太平药。无论汤药还是丸药和六味地黄丸口感一样，酸甜可口，久服也无副作用。尤其是肾阴虚导致的耳鸣更是合适。 耳鸣是一种常见病，尤其是老年 ...全文", "s": "HIGH", "h": "fraud", "r": 2.6, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295572099793467", "reposts": 0, "comments": 0, "likes": 1, "time": "2026-05-06 13:43"}, {"u": "启东检测折腾达人", "t": "被掩盖的真相：别把所有健康问题，都甩给疫苗！这段时间，大家但凡身体出点问题，都习惯性归到疫苗上，可很少有人敢说破另一个被彻底掩盖的重大真相！2020 年前后房地产大跃进，遍地都是赶工期的速成精装房，为了快速回款、快速交付，施工偷工减料、装修以次充好，超标板材、有毒胶水、劣质建材全往 ...全文", "s": "HIGH", "h": "reputation_attack", "r": 2.2, "c": "认知误区", "url": "https://m.weibo.cn/detail/5291642231720244", "reposts": 0, "comments": 1, "likes": 1, "time": "2026-04-25 17:28"}, {"u": "王小峰_带三个表", "t": "（转）肯尼迪可不是闹着玩的......他不只是说说而已。他掀起了一些大浪，这就是我信任他的原因：1) 他很厉害，2）他起诉了通用电气等公司，阻止他们向哈德逊河倾倒有毒的多氯联苯，3）他为起诉孟山都公司草甘膦致癌的原告赢得了数亿美元的赔偿，4）他对制药公司提起的诉讼提高了人们对疫苗潜在危 ...全文", "s": "HIGH", "h": "reputation_attack", "r": 2.2, "c": "认知误区", "url": "https://m.weibo.cn/detail/5098050245363343", "reposts": 4, "comments": 3, "likes": 31, "time": "2024-11-07 12:22"}, {"u": "中医医门似海", "t": "道家六字养生诀：发嘘Xu：可以吐出肝上的毒气；发呵He：可以吐出心上的毒气；发呼Hu：可以吐出脾上的毒气；发嘶Si：可以吐出肺上的毒气；发吹Chui：可以吐出肾上的毒气；发嘻Xi：可以吐出三焦的毒气。 倪海厦谈话记录整理。 #倪海厦##倪海厦经验方##中医养生##健康养生#", "s": "HIGH", "h": "none", "r": 1.9, "c": "伪科普", "url": "https://m.weibo.cn/detail/5281043188027974", "reposts": 584, "comments": 15, "likes": 641, "time": "2026-03-27 11:31"}, {"u": "李柄红", "t": "健康养生 倪海厦大师讲肝脏的排毒方法，一个动作即可#李柄红中医学研究室##李柄红##健康养生##倪海厦经验方# 李柄红的微博视频", "s": "HIGH", "h": "cult", "r": 1.9, "c": "伪科普", "url": "https://m.weibo.cn/detail/5293836806129566", "reposts": 13, "comments": 2, "likes": 29, "time": "2026-05-01 18:48"}, {"u": "这次搞到真的了_", "t": "#这2种饮料混着喝或永久损伤大脑#原来，食物和食物之间有这么多门道可乐是因为牛奶和可乐混在一起，会导致肚子疼，然后重病进医院，身体会损伤，那些部位还会发起痘痘特意去搜罗了一些食物相克的例子，还有一些养生指南，收藏了", "s": "HIGH", "h": "none", "r": 1.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5268744432780163", "reposts": 24, "comments": 31, "likes": 160, "time": "2026-02-21 13:00"}, {"u": "乜許丶陌生", "t": "#长期使用空气炸锅的人都怎么样了#使用空气炸锅最特殊的一点则是，烹制食物的过程中不需要食用油，所以烹制出的基本都是少油食物。如果每顿都吃这种少油食物，必然会导致不饱和脂肪酸的摄入不足，并进而引发各种相关的疾病。再者就是高温（通常指120℃以上）处理食物的过程中，食物中的碳水化合物、氨 ...全文", "s": "HIGH", "h": "none", "r": 1.5, "c": "认知误区", "url": "https://m.weibo.cn/detail/5289964847759538", "reposts": 0, "comments": 7, "likes": 68, "time": "2026-04-21 02:22"}, {"u": "小金鱼爱种草", "t": "以后千万不要贪小便宜买东西因为很有可能会致癌 以下几点希望大家认真看1、大街上发的小纸巾(上面有妇科医院联示方式的)，大概率纸不干净，女生很容易中招2、买米只要执行标准是1354都是普通大米，19266是五常大米3、杂牌洗衣液荧光剂含量较高 ，看起来和大牌没什么区别 ，但实际是由大量增稠 ...全文", "s": "HIGH", "h": "none", "r": 1.5, "c": "认知误区", "url": "https://m.weibo.cn/detail/5294798581272325", "reposts": 9, "comments": 0, "likes": 10, "time": "2026-05-04 10:30"}, {"u": "风起之日_", "t": "不限数量，尽情喷西方所有垃圾食品——自己写爽文自己看，看的太爽了————————————————西方垃圾食品：伪装成精致健康，实则是掏空身体的“隐形杀手”全网最离谱的骗局，莫过于“西方饮食更健康”“西式零食低卡无负担”——拜托，清醒一点！西方垃圾食品的迷惑性，比中、日式垃圾食 ...全文", "s": "HIGH", "h": "reputation_attack", "r": 0.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5294818372620806", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-04 11:48"}, {"u": "写经换鹅", "t": "人类慢性疾病的根源是什么？干细胞加速自愈。人类慢性疾病的根源是一个复杂的问题，涉及多种因素。综合来看，主要包括以下几个方面：1.环境与气候因素长期暴露于不良环境（如空气污染、水污染）或人为气候控制（如空调、暖气）下，可能导致身体失衡，引发疾病。2.情绪与心理因素过度的情绪波动（ ...全文", "s": "HIGH", "h": "none", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295398648284363", "reposts": 0, "comments": 1, "likes": 0, "time": "2026-05-06 02:14"}, {"u": "山野土郎中", "t": "两个小动作，让你躺着就养生，每天五分钟，补肾又排毒！大多数人睡前都是抱着手机刷刷微信，其实睡前十分钟是养生黄金期，把这十分钟充分利用，身体想不好都难！例如睡前，做做这两个小动作，只要躺着，就可多赚十年寿，而且每天五分钟，补肾又排毒。两个小动作，为何有如此独特的效果我们常说， ...全文", "s": "HIGH", "h": "none", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5292919880942882", "reposts": 99, "comments": 18, "likes": 104, "time": "2026-04-29 06:05"}, {"u": "中医郭昉", "t": "最近关于泡脚的有趣反馈：徐州门诊的经理说他儿子泡完脚以后腮腺肿了，去医院检查说这是急性腮腺炎，得赶紧消炎。但神奇的是，孩子已经打过麻腮风疫苗了他给我打电话，我说不用急，就是内在的热毒发出来了，赶紧弄仙人掌打成泥外敷，配了一点儿清热解毒的药同服，基本两天就没事儿了。容德医馆药 ...全文", "s": "HIGH", "h": "none", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295540086769154", "reposts": 2, "comments": 2, "likes": 24, "time": "2026-05-06 11:36"}, {"u": "Pizvdn", "t": "奶奶化疗遭罪，这些食疗好物救大命😭奶奶这一轮化疗可太遭罪了。被那强烈的化疗反应折腾得够呛，一直恶心反胃，想吐又吐不出来，那难受的样子看着就让人心疼，我猜是化疗药物产生的毒素在身体里积聚了。我奶奶难受，我妈也心急如焚😟。知道多喝水能促进身体排毒，就一直劝奶奶多喝水，可奶奶刚 ...全文", "s": "HIGH", "h": "none", "r": 0.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5295538440504952", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-06 11:30"}, {"u": "人生需要团队与备斗", "t": "❣️酵素清肠排毒至关重要！肠道极易堆积宿便毒素…养森酵素食品类型 分解残渣、吸附垃圾、促进蠕动，净肠排浊、守护肠道健康✅", "s": "HIGH", "h": "fraud", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295452212954210", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-06 05:47"}, {"u": "宫一萱已瘦54斤", "t": "平常懒得运动 又不想饿肚子减肥总是反反覆覆要买奶昔的姐妹抓紧时间了最后一波时间了卖奶昔这么久 第一次做这么优惠的活动专门为买过奶昔回购和学生党姐妹做的奶昔都是真实的反馈现在减肥都是通过养生健康的方式瘦下来不饿肚子 不拉肚子 吃够主食 也不需要剧烈运动提高代谢 排除湿气 米饭 馒 ...全文", "s": "HIGH", "h": "fraud", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5216645606018671", "reposts": 0, "comments": 2, "likes": 35, "time": "2025-09-30 18:38"}, {"u": "困难挡不住精神", "t": "吸烟有害健康写在了香烟包装上。这可好了，mrna covid疫苗心肌炎，也写到mrna covid疫苗包装盒上了FDA宣布：mRNA COVID疫苗 导致 心肌炎新措施：「加贴新的 安全警示标签」尤如香烟包装警告，表明风险极高，责任自负….6月25日FDA批准的mRNA COVID19疫苗 安全标签", "s": "HIGH", "h": "reputation_attack", "r": 0.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5187492262708330", "reposts": 34, "comments": 7, "likes": 54, "time": "2025-07-12 07:53"}, {"u": "Mr王王王王子", "t": "所以按照GPT对野生鱼类则分类，越野越毒，越大越毒。我觉得这个点是不是可以加以利用一下，因为现代科技我认为完全有办法合成那种只对人类有害，而对动物无害的疫苗。比如抓到一只野生穿山甲，抓到一只野生熊，就给它注射这种，姑且叫它阳痿疫苗吧，反正给它注射，让这些穿山甲，野生熊，野生蛇世世代 ...全文", "s": "HIGH", "h": "none", "r": 0.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5281864995573361", "reposts": 1, "comments": 7, "likes": 96, "time": "2026-03-29 17:56"}, {"u": "经方梧桐先生", "t": "肺癌成因探讨：中医不可替代的防范作用今天继续探讨肺癌的成因。会讲几个议题：吸烟、误诊，中医防范肺癌不可替代的作用等。上篇探讨《冰水是一级冷门致癌物》：所谓烟酒是一级致癌物，其实也只是相关关系。就好比冰水致癌也只是相关关系，并不是今天早上你喝了一杯冰水，就要得癌症了，不是。同 ...全文", "s": "HIGH", "h": "none", "r": 0.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5293013381154576", "reposts": 1, "comments": 0, "likes": 11, "time": "2026-04-29 12:16"}, {"u": "德国Zoe妈妈", "t": "⚠️5G技术： 由于健康风险，医生呼吁推迟 5G 部署。♨️射频辐射与铅属于同一类致癌物。👀 世界卫生组织顾问表示，有足够的证据表明，重新评估射频辐射将导致其被列为一级，即对人类致癌。有人说关于微波辐射对健康影响的科学争论已经结束，但问题仍然存在：我们能冒这个风险吗⁉️ ...全文", "s": "HIGH", "h": "reputation_attack", "r": 0.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5038730127083100", "reposts": 15, "comments": 3, "likes": 34, "time": "2024-05-27 19:45"}, {"u": "BrotherYouQingkui", "t": "💥射頻電磁場（RF-EMF）致癌是否真的「不再是陰謀論」？最新研究显示：住在手機基站60公尺內的人，白血球異常升高程度堪比吸烟！《Electromagnetic Biology and Medicine》2026年2月論文： 24% 的近距離居民（多為30歲以下）嗜鹼性粒細胞超標每天用手機4–6小時", "s": "HIGH", "h": "reputation_attack", "r": 0.8, "c": "新发谣言", "url": "https://m.weibo.cn/detail/5273501317733991", "reposts": 2, "comments": 0, "likes": 8, "time": "2026-03-06 16:02"}, {"u": "詹瑞玺大烧饼", "t": "每天都在被辐射的你，离致死量还有多远？#健康知识##医学科普##科普知识##健康科普##辐射##孕妇##孕期知识# 詹瑞玺大烧饼的微博视频", "s": "HIGH", "h": "none", "r": 0.8, "c": "伪科普", "url": "https://m.weibo.cn/detail/5189466673119293", "reposts": 1, "comments": 0, "likes": 7, "time": "2025-07-17 18:38"}, {"u": "杨黛西小姐", "t": "智齿如果不是必须拔，没有必要特地拔掉。因为智齿其实挺有用的，其中含有干细胞，可以修复心脏、大脑和皮肤。另外智齿可以用作自己大牙的donor，相当于一个免费的种植牙。#家庭健康守护计划#", "s": "HIGH", "h": "none", "r": 0.6, "c": "伪科普", "url": "https://m.weibo.cn/detail/5283374084392555", "reposts": 0, "comments": 14, "likes": 15, "time": "2026-04-02 21:53"}, {"u": "天涯老卜BZH", "t": "醋蛋液 2026年4月23日，星期四，晴。 钙流失是人进入50岁后都会面临的问题，因而补钙就成了人们必须面对的现实问题。为此，商家推出了各种补钙药品，但科学研究证明，吃钙根本补不了钙，补钙需要体内多种因素配合。我国老祖先早就发现醋蛋液不但能够增强体内营养，而且能够非常好地补 ...全文", "s": "HIGH", "h": "fraud", "r": 0.6, "c": "伪科普", "url": "https://m.weibo.cn/detail/5290983870957317", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-04-23 21:51"}, {"u": "神农养生宝典", "t": "我亲眼所见的中药治愈肿瘤特效案#国医的精诚力量# 祖国医药学是一个伟大宝库，也是人类征服肿瘤之有力武器。经由许多年实践研究与总结，中医对于肿瘤病因病机之认识，渐趋一致：气滞、痰饮、湿浊、瘀血、热毒等实邪为致病之元凶；人体气血阴阳之亏虚为受病容邪之基地。肿瘤的治法因而医家从各自之 ...全文", "s": "HIGH", "h": "fraud", "r": 0.5, "c": "伪科普", "url": "https://m.weibo.cn/detail/5194365796352686", "reposts": 10, "comments": 1, "likes": 8, "time": "2025-07-31 07:06"}, {"u": "王根深W", "t": "1.中国对人类最大的贡献是什么义法方以礼主要介绍了几种不同的治法。东方出砭石，南方出微针，西方出毒药。对于这些中医治疗的方法，最高明的是中央者，他用的是导引按敲，我觉得如果是中国对人类最大的贡献是什么首推导引和暗敲的技术，可是现在人们都不把它当成治疗手段，一说导引按敲就说做保健， ...全文", "s": "HIGH", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5292559433991164", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-04-28 06:12"}, {"u": "啡咖17", "t": "你知道吗？（刚刚知道😄😄）女性的经血一点不脏、无毒、也无菌；在紧急情况下，它甚至被用于伤口愈合和医学研究中的皮肤移植。你的身体每个月都会产生一种富含干细胞的营养修复物质，而大多数女性却认为它是“废物”。想象一下：你的子宫不仅仅是孕育宝宝的温床；它还是一个修复工厂。是不 ...全文", "s": "HIGH", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5273249250282365", "reposts": 31, "comments": 9, "likes": 103, "time": "2026-03-05 23:20"}, {"u": "八卦小钢炮", "t": "胰岛素或将退出历史舞台 #科普# #科技# #糖尿病# 八卦小钢炮的微博视频", "s": "HIGH", "h": "none", "r": 0.0, "c": "新发谣言", "url": "https://m.weibo.cn/detail/5288820922124249", "reposts": 22, "comments": 2, "likes": 33, "time": "2026-04-17 22:37"}, {"u": "爱吃小纳豆", "t": "#建议你在吃了药以后一定不要吃西柚#食物相克并不是不无道理 来看一下双食记怎么惩罚背叛自己的老公可不要学习哦 你们觉得惩罚的严厉吗", "s": "HIGH", "h": "none", "r": 0.0, "c": "认知误区", "url": "https://m.weibo.cn/detail/5223465235778547", "reposts": 1, "comments": 16, "likes": 81, "time": "2025-10-19 14:17"}, {"u": "在下程程", "t": "【推肝经】每天睡觉之前把双腿弯曲打开，先从左腿开始，双手相叠按在大腿的根部，稍用力向前推到膝盖。先左后右，反复推上50遍就可以畅通肝经、疏调肝气，使肝胆在睡眠中能充分地排毒，而您做梦都会做美梦。在女性经期前后做一做，可以调节月经、保养妇科、瘦身养颜；男性体质下降了，打不起精神， ...全文", "s": "HIGH", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5204226893940633", "reposts": 854, "comments": 67, "likes": 1509, "time": "2025-08-27 12:10"}, {"u": "运动健身教程", "t": "排毒六字诀，倪师亲传，每日练习！#中医养生##微博兴趣创作计划# 运动健身教程的微博视频", "s": "HIGH", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5273514610529484", "reposts": 221, "comments": 6, "likes": 250, "time": "2026-03-06 16:55"}, {"u": "一只甜圈圈耶", "t": "心情不好，容易郁闷，血於体质，经常肝气补舒展，有一口气憋着的姐妹一定要试一试每天早上拍八虚。拍打两个手肘窝可以祛湿，浊气和淤堵。拍打腋窝，可以疏肝气，去心火，拍打腹股沟，可以健脾胃，改善妇科问题，拍打拍两腘窝：调理水肿、湿疹、腰腿不舒服。我觉得这个是现代人养生祛湿排毒日常 ...全文", "s": "HIGH", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5288238623492839", "reposts": 23, "comments": 4, "likes": 86, "time": "2026-04-16 08:03"}, {"u": "经方李正阳", "t": "汉唐中医经方#中医养生# 倪师亲自示范五脏排毒法，倪师本人，非AI，添加了文字只为大家能清楚的理解练习，大家没事了易筋经练起来吧，无论是在练功夫还是气功还是易筋经之前先把五脏的浊气排出去，中医养生更是有着久远的历史，现代人透支气血太多，更需要补气血养生，手机还需要充电呢，何况 ...全文", "s": "HIGH", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5277205771064956", "reposts": 147, "comments": 10, "likes": 176, "time": "2026-03-16 21:22"}, {"u": "静姐爱养生", "t": "#苗方养生##论坚持喝五清茶的重要性# 给你们喝五清茶的理由有好多的我们的脾胃，其实很像一个全年无休的工人。每天三顿饭，加上零食、奶茶、宵夜，消化不完的食物就堆在身体里，变成痰湿、浊气、垃圾。久而久之，脾胃“半罢工”了——吃进去的化不成气血，排不出去的成了负担。人越来越累，肚子越来越 ...全文", "s": "HIGH", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295566092764882", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-06 13:20"}, {"u": "钢铁之裤子", "t": "化疗后坚持排毒，身体终于缓过来了！爸爸化疗的时候，他本来身体就弱，化后整个人瞬间蔫了，吃不下饭还整宿整宿睡不着，看着他日渐憔悴的样子，我真的太心疼了。后来才知道，多半是化疗残留没排干净，拖垮了身体底子，我把这段时间的调理经验总结出来，分享给同样在煎熬的家属们！-💡 化疗后1-7天 ...全文", "s": "HIGH", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295535843968810", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-06 11:19"}, {"u": "爱逛_国际", "t": "🔁肠道健康，不是玄学，是科学✅吸收枢纽—负责转化99%的营养✅免疫阵地—掌控70%的防御力✅排毒通道—承担80%的垃圾清运#肯贝优清黄益生菌# 稳菌群、护屏障、促排毒，让健康更有底气", "s": "HIGH", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295507594806308", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-06 09:27"}, {"u": "全息医学手诊面诊足诊舌诊一点通", "t": "#国医的精诚力量# 人体最大的解毒器官——肝脏，默默承受熬夜、压力、油腻、情绪。肝胆排毒，不是玄学，是给身体一次深度重启。排浊、清淤、疏肝、理气，让身体轻松，让脸色透亮，让情绪温柔。", "s": "HIGH", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295369270331201", "reposts": 13, "comments": 2, "likes": 23, "time": "2026-05-06 00:18"}, {"u": "易辰山人", "t": "鼻炎最厉害的方子，鼻塞、鼻涕、鼻痒统统搞得定道家养生⁠宁可柜上药生尘，但愿天下无病人。 ⁠鼻炎，看似是鼻子的问题，其实根源在肺。《黄帝内经》早就告诉我们了，肺气通于鼻，肺和则鼻能知香臭矣。所以鼻炎不能怪鼻子，鼻子只不过是肺的替罪羊，它是在提醒你，该关心关心你的肺了。头痛医 ...全文", "s": "HIGH", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5294859818894355", "reposts": 19, "comments": 1, "likes": 24, "time": "2026-05-04 14:33"}, {"u": "樊可可HX", "t": "痛经是因为有炎症，或者身体酸碱失衡。月经是女性进化出来的，降低身体营养的方式之一，类似吃喝拉撒，是维持营养均衡用的，是有好处的。痛经不需要忍着，治疗就好。如果是炎症，根据体质不同，厌氧菌体质吃甲硝唑片（或其他抗厌氧菌药）消炎，风热体质和风寒体质吃盐酸左氧氟沙星胶囊（或其他抗细 ...全文", "s": "HIGH", "h": "none", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5293648371778711", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-05-01 06:19"}, {"u": "好物选购指南", "t": "为什么说倍愈粒是细胞抗衰王者？高活性麦角硫因，激活细胞自愈力实测数据当代人被熬夜、压力、紫外线、饮食不规律裹挟，面色暗黄、疲惫乏力、细纹滋生、代谢变慢等初老信号频频出现，这背后的根本问题的是——细胞受损、自愈力下滑。而在众多抗衰成分中，麦角硫因凭借其独特的靶向性和强大的修护力， ...全文", "s": "HIGH", "h": "fraud", "r": 0.0, "c": "伪科普", "url": "https://m.weibo.cn/detail/5290887886147760", "reposts": 0, "comments": 0, "likes": 0, "time": "2026-04-23 15:30"}, {"u": "neoblue_Philipsx", "t": "5月17日は「妊妇的疫苗日」完全疯了。「周日也能打疫苗♪」好像是这样。妇产科医生就该宣传阿布利昔单抗的风险啊！但我认为、、、能给孕妇打的疫苗很少，所以借机煽动的妇产科医生恐怕还会层出不穷。保护肚子里宝宝的不是妇产科医生，而是妈妈自己。尤其是疫苗，因为是肌肉注射，比静脉注射更快 ...全文", "s": "HIGH", "h": "reputation_attack", "r": 0.0, "c": "认知误区", "url": "https://m.weibo.cn/detail/5291302860095755", "reposts": 1, "comments": 0, "likes": 4, "time": "2026-04-24 18:59"}, {"u": "猴子瘦身记", "t": "手机的副作用 1. 今年，西湖大学校长施一公团队连发三篇研究讨论电磁信号对人体健康的影响，指出手机辐射影响发育；日内瓦大学研究表明频繁使用手机将导致精子浓度降低。9月，法国宣布iPhone 12 辐射值超过欧盟标准并要求其立即下架。 2. 目前关于手机是否致癌的看法仍存争议，使用手机 ...全文", "s": "MEDIUM", "h": "none", "r": 4.2, "c": "认知误区", "url": "https://m.weibo.cn/detail/4974625933755278", "reposts": 0, "comments": 69, "likes": 58, "time": "2023-12-02 22:18"}, {"u": "紫金山上听风吟", "t": "89岁大叔逆龄如60岁！养生秘诀首次公开，简单到难以置信 紫金山上听风吟的微博视频", "s": "MEDIUM", "h": "none", "r": 2.2, "c": "伪科普", "url": "https://m.weibo.cn/detail/5295233379340223", "reposts": 18, "comments": 3, "likes": 29, "time": "2026-05-05 15:18"}, {"u": "小嬡神", "t": "#王嘉尔食物中毒#有些东西真的不能乱吃 很多食物相生相克一不小心就容易食物中毒 希望可以好好休息 早日恢复", "s": "MEDIUM", "h": "none", "r": 1.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5200267931028476", "reposts": 1, "comments": 17, "likes": 131, "time": "2025-08-16 13:59"}, {"u": "漫漫大王kk-", "t": "#张柏芝疑食物中毒#这是吃了不干净的东西还是食物相克啊姐姐一定要注意安全啊 食物中毒不是小事及时就医才是最主要的 漫漫大王kk-的微博视频", "s": "MEDIUM", "h": "none", "r": 1.8, "c": "认知误区", "url": "https://m.weibo.cn/detail/5294843753924106", "reposts": 11, "comments": 20, "likes": 173, "time": "2026-05-04 13:29"}, {"u": "Pendlers", "t": "其实很多癌症是省出来的，尤其是吃隔夜菜", "s": "MEDIUM", "h": "none", "r": 0.0, "c": "认知误区", "url": "https://m.weibo.cn/detail/5290452662092388", "reposts": 532, "comments": 29, "likes": 2149, "time": "2026-04-22 10:41"}, {"u": "今日张店", "t": "#隔夜菜不是指放了一夜的菜# 夫妻为省钱长期吃冰箱里的剩饭剩菜，结果双双确诊大肠癌。医生：隔夜菜中的亚硝酸盐含量过高，或能产生致癌物。#隔夜菜##肠癌# （抚州发布） 今日张店的微博视频", "s": "NONE", "h": "none", "r": 0.4, "c": "认知误区", "url": "https://m.weibo.cn/detail/5287552644810138", "reposts": 12, "comments": 10, "likes": 15, "time": "2026-04-14 10:37"}, {"u": "搜狐健康", "t": "【耶鲁大学研究：mRNA新冠疫苗存在长期副作用！】#新冠疫苗副作用# 新冠疫苗对人体的长期影响逐渐浮出水面。近期有多家媒体报道，耶鲁大学专家发现有些人在接种辉瑞和Moderna疫苗后出现慢性症状，包括过度疲劳、脑雾等，被称为疫苗接种后综合症（PVS），接种后一两天出现，可能加重或长期持续，文章还 .", "s": "NONE", "h": "reputation_attack", "r": 0.0, "c": "新发谣言", "url": "https://m.weibo.cn/detail/5136540885324408", "reposts": 194, "comments": 19, "likes": 172, "time": "2025-02-21 17:30"}];
+
+// Transform compressed data
+const DATA = RAW_DATA.map(d => ({
+  username: d.u,
+  text: d.t,
+  severity: d.s,
+  harm: d.h,
+  risk: d.r,
+  category: d.c,
+  url: d.url,
+  reposts: d.reposts || 0,
+  comments: d.comments || 0,
+  likes: d.likes || 0,
+  time: d.time || ''
+}));
+
+// Render on load
+renderTable('all');
+
+function renderTable(filter) {
+  const tbody = document.getElementById('data-tbody');
+  const filtered = filter === 'all' ? DATA : DATA.filter(d => d.severity === filter);
+
+  document.getElementById('data-count').textContent = filtered.length;
+
+  tbody.innerHTML = filtered.map(d => {
+    const sevClass = d.severity === 'CRITICAL' ? 'tag-critical' :
+                     d.severity === 'HIGH' ? 'tag-high' :
+                     d.severity === 'MEDIUM' ? 'tag-medium' : 'tag-good';
+    const harmMap = {
+      'reputation_attack': '声誉攻击',
+      'fraud': '欺诈诈骗',
+      'cult': '邪教属性',
+      'none': '-'
+    };
+    const engagement = `转发${d.reposts} 评${d.comments} 赞${d.likes}`;
+    return `<tr>
+      <td><strong>${d.username}</strong></td>
+      <td><a href="${d.url}" target="_blank" style="color:var(--accent);text-decoration:none;" title="${d.text}">${d.text}</a></td>
+      <td><span class="tag ${sevClass}">${d.severity}</span></td>
+      <td>${harmMap[d.harm] || d.harm}</td>
+      <td style="font-size:11px;color:var(--text-dim)">${engagement}</td>
+      <td>${d.risk.toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterData(filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderTable(filter);
+}
+
+// Category chart
+function renderCategoryChart() {
+  const categories = [
+    { name: '未分析', count: 275, color: 'var(--text-dim)' },
+    { name: '正常科普', count: 153, color: 'var(--accent)' },
+    { name: '辟谣内容', count: 76, color: 'var(--good)' },
+    { name: '伪科普', count: 64, color: 'var(--critical)' },
+    { name: '认知误区', count: 24, color: 'var(--high)' },
+    { name: '正常内容', count: 21, color: 'var(--text-dim)' },
+    { name: '新发谣言', count: 8, color: 'var(--medium)' },
+  ];
+
+  const total = 621;
+  const container = document.getElementById('category-chart');
+  container.innerHTML = categories.map(c => {
+    const pct = (c.count / total * 100).toFixed(1);
+    return `<div class="category-row">
+      <div class="category-name">${c.name}</div>
+      <div class="category-bar">
+        <div class="category-fill" style="width:${pct}%; background:${c.color}">${pct}%</div>
+      </div>
+      <div class="category-count">${c.count}</div>
+    </div>`;
+  }).join('');
+}
+
+// Init
+renderCategoryChart();
+loadData();
+</script>
+</body>
+</html>

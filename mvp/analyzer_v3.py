@@ -508,11 +508,13 @@ def apply_rules(text: str, kw_stats: dict) -> list[dict]:
     # R5: 食品相克谣言
     # 排除：辟谣帖、玩梗/提及（非传播意图）
     if kw_stats["food_clash"]["count"] >= 1:
-        _debunk_indicators = ["辟谣", "谣言", "真相", "别信", "不存在", "不可信", "别被"]
+        _debunk_indicators = ["辟谣", "谣言", "真相", "别信", "不存在", "不可信", "别被", "讲透", "误区", "澄清"]
         _casual_indicators = ["想你", "可爱", "笑死", "担心", "感觉", "喷了"]
+        _question_indicators = ["为什么", "怎么", "真的吗", "会致癌吗", "能吃吗", "到底", "会不会"]
         _is_debunk_context = any(d in text for d in _debunk_indicators)
         _is_casual = any(c in text for c in _casual_indicators)
-        if _is_debunk_context:
+        _is_question = any(q in text for q in _question_indicators)
+        if _is_debunk_context or _is_question:
             pass  # 辟谣帖中提到食物相克不算伪科普
         elif _is_casual:
             pass  # 随口提及不算传播
@@ -912,7 +914,7 @@ def call_llm(
     带重试和超时处理。失败时返回None，系统回退到纯规则引擎。
     """
     llm_config = (config or {}).get("llm", {})
-    api_key = llm_config.get("api_key", "")
+    api_key = os.environ.get("XIAOMI_API_KEY") or llm_config.get("api_key", "")
     endpoint = llm_config.get("endpoint", "")
     if not endpoint:
         api_base = llm_config.get("api_base", "")
@@ -947,6 +949,11 @@ def call_llm(
         "max_tokens": max_tokens,
         "temperature": temperature,
     }
+
+    # 合并额外参数（如小米thinking开关）
+    extra_params = llm_config.get("extra_params", {})
+    if extra_params:
+        payload.update(extra_params)
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -989,74 +996,56 @@ def llm_analyze(
             "is_debunking": bool,
         }
     """
-    system_prompt = """你是中国科协"科学辟谣"平台的资深内容审核专家。你的任务是判断一条微博内容是否为伪科普。
+    system_prompt = """你是中国科协"科学辟谣"平台的资深内容审核专家，擅长识别伪科普、健康谣言、认知误区。
 
-<core_principle>
 最重要的判断原则：先判断核心科学断言是否属实。
-- 科学断言基本属实 → NORMAL_SCIENCE，即使措辞有恐惧营销倾向
-- 科学断言错误或严重误导 → PSEUDOSCIENCE
-- 伪科普的本质是"断言错误"，不是"语气夸张"
-</core_principle>
+- 如果科学断言基本属实（如"黄曲霉毒素是强致癌物""发霉食物不能吃"），即使措辞有恐惧营销倾向（如"转给家人""杀不死"），也不算伪科普，应判定为 NORMAL_SCIENCE。
+- 伪科普的本质是"科学断言错误或严重误导"，不是"语气夸张"。
+- 典型伪科普：量子纠缠治病、食物相克致死、敲手臂排毒——核心断言就是假的。
+- 不是伪科普：黄曲霉毒素致癌、隔夜菜亚硝酸盐风险——核心断言有科学依据，即使表述不够严谨。
 
-<definitions>
-content_type 定义：
-- PSEUDOSCIENCE：传播错误科学信息（伪科普、谣言、认知误区）
-- DEBUNKING：辟谣内容——引用谣言是为了反驳/澄清
-- NORMAL_SCIENCE：传播正确科学知识
-- NON_SCIENCE：与科学/健康/食品无关
+你的核心能力：
+1. 精准区分"传播谣言"和"辟谣文章"——辟谣文章会引用谣言内容来反驳，不能因为出现了谣言关键词就判定为伪科普
+2. 识别常见的伪科普套路：恐惧营销、虚假权威、科学概念滥用、因果简化、绝对化表述
+3. 判断科学断言的准确性
 
-severity（仅 PSEUDOSCIENCE 有意义）：
-- CRITICAL：确凿的伪科普，明确的科学概念滥用或已被辟谣
-- HIGH：明显的伪科普特征
-- MEDIUM：可疑但可能是表述不严谨
-- NONE：非 PSEUDOSCIENCE 时必须为 NONE
+关于content_type的定义：
+- PSEUDOSCIENCE：伪科普、谣言、认知误区——传播错误科学信息的内容
+- DEBUNKING：辟谣内容——引用谣言是为了反驳/澄清，目的是消除误解
+- NORMAL_SCIENCE：正常科普——传播正确科学知识的内容
+- NON_SCIENCE：非科学内容——与科学/健康/食品无关
 
-harm_line（仅 PSEUDOSCIENCE 有意义）：
-- fraud：引流话术（加微信/进群/扫码）、商业链接、恐惧+推销
-- reputation_attack：定向攻击企业/技术/政策，阴谋论话术
-- cult：灵修/修行/导师等组织化特征，精神控制话术
-- none：不属于以上主线
-优先级：fraud > cult > reputation_attack
-</definitions>
+关于severity（仅当content_type为PSEUDOSCIENCE时有意义）：
+- CRITICAL：确凿的伪科普/谣言，有明确的科学概念滥用或已被辟谣
+- HIGH：明显的伪科普特征，高度可疑
+- MEDIUM：有可疑迹象但也可能是表述不严谨
+- NONE：不是伪科普（content_type非PSEUDOSCIENCE时必须为NONE）
 
-<reasoning_steps>
-请按以下步骤分析，每步写一句话：
-1. 内容的核心科学断言是什么？
-2. 这个断言是否属实？（有无科学依据）
-3. 内容是在传播谣言，还是在辟谣/科普？
-4. 如果是伪科普，属于哪条危害主线？
-</reasoning_steps>
+关于confidence打分的严格校准规则：
+- 0.9-1.0：你有确凿证据（如已知被辟谣的经典谣言、明确的科学概念滥用），绝对确定
+- 0.7-0.9：有明显伪科普特征但不是100%确定
+- 0.5-0.7：有可疑迹象但也可能是表述不严谨的正常讨论
+- 0.3-0.5：不太确定，信号弱
+- 0.0-0.3：几乎没有伪科普特征
+注意：辟谣文章引用了谣言内容来反驳，confidence应该打低（0.1-0.3），因为它不是伪科普。不要因为出现了恐惧词就给高分——要看整体语境是在传播恐惧还是在消除恐惧。
 
-<examples>
-例1（伪科普）：
-输入："量子纠缠可以治病，打通经络，激活细胞自愈力"
-判断：核心断言"量子纠缠治病"是伪科学概念滥用 → PSEUDOSCIENCE, HIGH, harm_line=none
+请以严格JSON格式返回（不要markdown包裹）：
+{
+    "content_type": "PSEUDOSCIENCE/DEBUNKING/NORMAL_SCIENCE/NON_SCIENCE",
+    "severity": "CRITICAL/HIGH/MEDIUM/NONE",
+    "confidence": 0.0-1.0,
+    "category": "伪科普/认知误区/冷饭热炒/新发谣言/辟谣内容/正常科普/正常内容",
+    "reasoning": "一句话说明判断理由",
+    "is_debunking": true/false,
+    "harm_line": "fraud/reputation_attack/cult/none"
+}
 
-例2（辟谣内容）：
-输入："网传食物相克会致死？真相是：没有任何科学证据表明常见食物组合会产生毒素"
-判断：内容在反驳"食物相克"谣言，核心立场是正确的 → DEBUNKING, NONE
-
-例3（正常科普但措辞夸张）：
-输入："黄曲霉毒素是一级致癌物！发霉的花生千万别吃！转给家人！"
-判断：核心断言"黄曲霉毒素致癌"属实，措辞夸张但科学正确 → NORMAL_SCIENCE, NONE
-
-例4（灰色地带 - 模型不确定时）：
-输入：某个关于"干细胞修复"的讨论，既有夸大又有部分事实
-判断：如果无法确定断言是否错误，confidence 应低于 0.5
-</examples>
-
-<output_format>
-以严格JSON格式返回，不要markdown包裹，不要多余文字：
-{"content_type":"...","severity":"...","confidence":0.0,"category":"...","reasoning":"一句话","is_debunking":false,"harm_line":"none"}
-</output_format>
-
-<critical_reminders>
-- 辟谣文章引用谣言关键词来反驳，不是伪科普
-- 如果你无法确定核心断言是否错误，confidence 必须低于 0.5
-- 不要仅因为出现恐惧词就判定为伪科普——看整体语境
-- content_type 非 PSEUDOSCIENCE 时，severity 必须为 NONE
-- 只返回JSON，不要任何其他文字
-</critical_reminders>"""
+关于harm_line（危害主线，仅当content_type为PSEUDOSCIENCE时有意义）：
+- fraud（电诈线）：内容包含引流话术（加微信/进群/扫码）、商业链接、恐惧+推销模式
+- reputation_attack（风评受损线）：内容定向攻击特定企业/技术/政策，使用阴谋论话术
+- cult（邪教属性线）：内容包含灵修/修行/导师等组织化特征，或精神控制话术
+- none：不属于以上任何主线
+注意：一条内容只归入一条主线，优先级：fraud > cult > reputation_attack"""
 
     # 截断过长文本（节省token）
     truncated = text[:800] if len(text) > 800 else text
@@ -1069,27 +1058,22 @@ harm_line（仅 PSEUDOSCIENCE 有意义）：
             [f"{r['rule_id']}({r['name']})" for r in triggered]
         )
 
-    prompt = f"""<data_to_analyze>
-<weibo_content>
+    prompt = f"""请判断以下微博内容的类型和风险等级。
+
+【微博内容】
 {truncated}
-</weibo_content>
-<rule_engine_result>
-风险评级：{rule_result.get('severity', '?')}，风险得分：{rule_result.get('risk_score', 0)}
+
+【规则引擎参考】
+当前风险评级：{rule_result.get('severity', '?')}，风险得分：{rule_result.get('risk_score', 0)}
 {rules_desc}
-</rule_engine_result>
-</data_to_analyze>
 
-<task>
-请按reasoning_steps分析上述微博内容，然后返回JSON。
-</task>
+请特别注意：
+- 如果文章是在辟谣/澄清/科普，即使提到了谣言关键词，也应判断为DEBUNKING(is_debunking=true, severity=NONE)
+- "量子纠缠治病""远程导引""能量疗愈"等属于典型PSEUDOSCIENCE
+- 正规机构发布的科学常识普及属于NORMAL_SCIENCE(severity=NONE)
+- content_type非PSEUDOSCIENCE时，severity必须为NONE
 
-<final_reminder>
-- 辟谣文章 ≠ 伪科普
-- 不确定时，confidence < 0.5
-- 只返回JSON
-</final_reminder>
-
-"""
+返回JSON："""
 
     response = call_llm(prompt, system_prompt, config)
     if not response:
@@ -1256,19 +1240,33 @@ def analyze_text(
     elif severity in ("MEDIUM", "HIGH", "CRITICAL"):
         result["content_type"] = "PSEUDOSCIENCE"
         result["severity"] = severity
-    elif risk_score >= 0.5:
+    elif risk_score >= 0.3:
         # 灰区：有一定风险但规则未触发 → 待LLM判定
         result["content_type"] = "GRAY_ZONE"
         result["severity"] = "NONE"
-    else:
-        result["content_type"] = "NORMAL_SCIENCE"
+    elif is_science_related:
+        # 涉科但风险分极低：仍送LLM判定（防止TCM伪科普等漏判）
+        result["content_type"] = "GRAY_ZONE"
         result["severity"] = "NONE"
+    else:
+        result["content_type"] = "NON_SCIENCE"
+        result["severity"] = "NONE"
+
+    # 权威信源白名单：这些账号的科普内容不应被判为伪科普
+    AUTHORITY_WHITELIST = {
+        "央视一套", "央视新闻", "央视财经", "人民日报", "新华社",
+        "健康中国", "中国疾控中心", "科普中国", "科学辟谣",
+        "人民日报健康客户端", "国家应急广播", "成都卫健委",
+        "北京市疾控中心", "上海疾控", "深圳卫健委",
+    }
+    is_authority = username in AUTHORITY_WHITELIST or verified_type == 3
 
     # === 阶段8：LLM二次判断 ===
     # 调用LLM的情况：
     # 1. 规则引擎判为PSEUDOSCIENCE → 确认是否真伪科普
     # 2. DEBUNKING但置信度不高 → 确认是否真辟谣
     # 3. GRAY_ZONE（有风险但规则未触发）→ 让LLM判定类别
+    # 4. 权威信源 + GRAY_ZONE：仍调用LLM以获取reasoning，但后续会保护不翻转
     needs_llm = (
         result["content_type"] == "PSEUDOSCIENCE"
         or result["content_type"] == "GRAY_ZONE"
@@ -1299,25 +1297,38 @@ def analyze_text(
             old_sev = result["severity"]
 
             # LLM翻转逻辑
-            # GRAY_ZONE 对 LLM 结果更宽容（降低阈值）
+            # 强制翻转条件：
+            #   LLM判DEBUNKING(且is_debunking为真) 或 LLM判NON_SCIENCE → 无条件翻转
+            #   （修复小米模型低confidence + GRAY_ZONE漏翻问题）
             confidence_threshold = 0.4 if old_ct == "GRAY_ZONE" else 0.6
-            if llm_confidence >= confidence_threshold:
+            # 强制bool转换，防止LLM返回字符串"true"
+            llm_is_debunk_bool = bool(llm_is_debunk) if not isinstance(llm_is_debunk, bool) else llm_is_debunk
+            force_flip = (
+                old_ct in ("PSEUDOSCIENCE", "GRAY_ZONE")
+                and llm_content_type in ("DEBUNKING", "NORMAL_SCIENCE", "NON_SCIENCE")
+                and (llm_is_debunk_bool or llm_content_type == "NON_SCIENCE")
+            )
+            if llm_confidence >= confidence_threshold or force_flip:
                 if llm_content_type != old_ct:
-                    result["content_type"] = llm_content_type
-                    result["severity"] = llm_severity
-                    result["llm_flipped"] = True
-
-                    if old_ct == "PSEUDOSCIENCE" and llm_content_type in ("DEBUNKING", "NORMAL_SCIENCE"):
-                        result["llm_flip_direction"] = "downgrade"
-                        if llm_is_debunk:
-                            result["is_debunking"] = True
-                        logger.info(f"LLM翻转↓: {old_ct}/{old_sev} → {llm_content_type}/NONE (conf={llm_confidence})")
-                    elif old_ct in ("DEBUNKING", "NORMAL_SCIENCE") and llm_content_type == "PSEUDOSCIENCE":
-                        result["llm_flip_direction"] = "upgrade"
-                        logger.info(f"LLM翻转↑: {old_ct} → PSEUDOSCIENCE/{llm_severity} (conf={llm_confidence})")
+                    # 权威信源保护：不允许LLM将权威账号翻转为伪科普
+                    if is_authority and llm_content_type == "PSEUDOSCIENCE":
+                        logger.info(f"权威信源保护: @{username} 不被翻转为PSEUDOSCIENCE (LLM想要{llm_content_type})")
                     else:
-                        result["llm_flip_direction"] = "reclassify"
-                        logger.info(f"LLM重分类: {old_ct} → {llm_content_type} (conf={llm_confidence})")
+                        result["content_type"] = llm_content_type
+                        result["severity"] = llm_severity
+                        result["llm_flipped"] = True
+
+                        if old_ct == "PSEUDOSCIENCE" and llm_content_type in ("DEBUNKING", "NORMAL_SCIENCE"):
+                            result["llm_flip_direction"] = "downgrade"
+                            if llm_is_debunk:
+                                result["is_debunking"] = True
+                            logger.info(f"LLM翻转↓: {old_ct}/{old_sev} → {llm_content_type}/NONE (conf={llm_confidence})")
+                        elif old_ct in ("DEBUNKING", "NORMAL_SCIENCE", "GRAY_ZONE") and llm_content_type == "PSEUDOSCIENCE":
+                            result["llm_flip_direction"] = "upgrade"
+                            logger.info(f"LLM翻转↑: {old_ct} → PSEUDOSCIENCE/{llm_severity} (conf={llm_confidence})")
+                        else:
+                            result["llm_flip_direction"] = "reclassify"
+                            logger.info(f"LLM重分类: {old_ct} → {llm_content_type} (conf={llm_confidence})")
 
                 elif llm_content_type == "PSEUDOSCIENCE" and old_ct == "PSEUDOSCIENCE":
                     # 同为PSEUDOSCIENCE，LLM可调整severity
