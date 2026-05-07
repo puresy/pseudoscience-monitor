@@ -46,6 +46,11 @@ def compute_report(data, date_str=""):
     ct, severities, harm, topics = Counter(), Counter(), Counter(), Counter()
     verified = high_followers = llm_flipped = llm_called = 0
     top_cases = []
+    # 交叉分析
+    topic_harm = {}         # topic -> Counter(harm)
+    topic_verified = {}     # topic -> (verified_count, total_count)
+    topic_severity = {}     # topic -> Counter(severity)
+    harm_examples = {}      # harm -> [(text, topic, verified)]
 
     for d in data:
         a = d.get("analysis", {})
@@ -61,19 +66,47 @@ def compute_report(data, date_str=""):
                 verified += 1
             if d.get("followers_count", 0) > 100000:
                 high_followers += 1
+
+            # 话题×危害交叉
+            hl = a.get("harm_line", [])
+            if topic not in topic_harm:
+                topic_harm[topic] = Counter()
+            if topic not in topic_verified:
+                topic_verified[topic] = [0, 0]
+            if topic not in topic_severity:
+                topic_severity[topic] = Counter()
+            topic_verified[topic][1] += 1
+            topic_severity[topic][sev] += 1
+            if d.get("verified"):
+                topic_verified[topic][0] += 1
+            if isinstance(hl, list):
+                for h in hl:
+                    topic_harm[topic][h] += 1
+            elif isinstance(hl, str) and hl not in ("none", ""):
+                topic_harm[topic][hl] += 1
+
             if sev in ("CRITICAL", "HIGH"):
                 top_cases.append({
                     "username": d.get("username",""), "verified": d.get("verified", False),
                     "followers": d.get("followers_count", 0), "text": d.get("text","")[:120],
                     "severity": sev, "topic": topic, "harm_line": a.get("harm_line", []),
                 })
-
+        # 全局危害统计（在PSEUDOSCIENCE块内hl已定义，这里复用）
         hl = a.get("harm_line", [])
         if hl:
             if isinstance(hl, list):
-                for h in hl: harm[h] += 1
+                for h in hl:
+                    harm[h] += 1
+                    if h not in harm_examples:
+                        harm_examples[h] = []
+                    if len(harm_examples[h]) < 5 and ct_val == "PSEUDOSCIENCE":
+                        harm_examples[h].append((d.get("text","")[:80], extract_topic(d.get("text","")), d.get("verified",False)))
             elif isinstance(hl, str) and hl not in ("none", ""):
                 harm[hl] += 1
+                if hl not in harm_examples:
+                    harm_examples[hl] = []
+                if len(harm_examples[hl]) < 5 and ct_val == "PSEUDOSCIENCE":
+                    harm_examples[hl].append((d.get("text","")[:80], extract_topic(d.get("text","")), d.get("verified",False)))
 
         if a.get("llm_flipped"): llm_flipped += 1
         if a.get("llm_analysis") and a.get("llm_analysis") != "": llm_called += 1
@@ -95,6 +128,9 @@ def compute_report(data, date_str=""):
         "high_followers_pct": high_followers / pseudo * 100 if pseudo else 0,
         "llm_flipped": llm_flipped, "llm_called": llm_called,
         "topics": topics.most_common(10), "top_cases": top_cases,
+        # 分析字段
+        "topic_harm": topic_harm, "topic_verified": topic_verified,
+        "topic_severity": topic_severity, "harm_examples": harm_examples,
     }
 
 
@@ -152,6 +188,30 @@ def build_markdown(r):
         f"- 认证号参与比例: {r['verified_pct']:.1f}%",
         f"- 粉丝 > 10万的高影响账号: {r['high_followers_pct']:.1f}%",
         f"- 认证号 ≠ 可信 — 认证标签增加了伪科普的传播半径和误导性", "",
+    ]
+
+    # 七、话题×危害交叉分析
+    lines += ["## 七、话题×危害交叉分析", ""]
+    th_sorted = sorted(r["topic_harm"].items(), key=lambda x: -sum(x[1].values()))[:8]
+    for topic, harm_ct in th_sorted:
+        harms_str = " ".join(f"{HARM_CN.get(h,h)}×{c}" for h, c in harm_ct.most_common(5))
+        v = r["topic_verified"].get(topic, [0,1])
+        vpct = v[0]/v[1]*100 if v[1] else 0
+        lines.append(f"- **{topic}** ({v[1]}条, 认证率{vpct:.0f}%): {harms_str}")
+    lines.append("")
+
+    # 八、危害主线分析
+    lines += ["## 八、危害主线分析", ""]
+    for h_key, h_cn in [("fraud","欺诈"), ("reputation_attack","风评攻击"), ("cult","邪教属性")]:
+        if r.get(h_key, 0):
+            examples = r["harm_examples"].get(h_key, [])
+            lines.append(f"### {h_cn} ({r[h_key]}条)")
+            for txt, topic, verif in examples[:3]:
+                vtag = "认证|" if verif else ""
+                lines.append(f"- [{topic}] {vtag}{txt}")
+            lines.append("")
+
+    lines += [
         "---",
         f"*报告由伪科普监测系统 v3.1 自动生成 · {datetime.now().strftime('%Y-%m-%d %H:%M')}*",
     ]
