@@ -1,0 +1,153 @@
+name: 伪科普监测 - 每日采集分析
+
+on:
+  schedule:
+    - cron: '0 19 * * *'  # 每天北京时间凌晨3点 (UTC 19:00)
+  workflow_dispatch:
+    inputs:
+      source:
+        description: '数据来源'
+        required: true
+        default: 'weibo'
+        type: choice
+        options:
+          - weibo
+          - piyao
+          - all
+      limit:
+        description: '每个关键词采集条数'
+        required: false
+        default: '30'
+        type: string
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  collect-and-analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 安装依赖
+        run: |
+          pip install --upgrade pip
+          pip install -r mvp/requirements.txt
+
+      - name: 运行采集+分析
+        working-directory: ./mvp
+        env:
+          XIAOMI_API_KEY: ${{ secrets.XIAOMI_API_KEY }}
+        run: |
+          SOURCE="${{ github.event.inputs.source || 'weibo' }}"
+          LIMIT="${{ github.event.inputs.limit || '30' }}"
+          DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+
+          echo "📊 开始采集: source=$SOURCE, date=$DATE, limit=$LIMIT"
+
+          python run_pipeline.py \
+            --source "$SOURCE" \
+            --date "$DATE" \
+            --limit "$LIMIT" \
+            --config config.yaml
+
+      - name: 刷新 Dashboard
+        working-directory: ./mvp
+        run: |
+          echo "🔄 刷新看板..."
+          python refresh_dashboard.py
+
+      - name: 生成周报
+        working-directory: ./mvp
+        run: |
+          echo "📝 生成周报..."
+          DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+          python report_agent.py "$DATE"
+
+      - name: 部署到 GitHub Pages
+        run: |
+          # 复制 dashboard.html 作为 gh-pages 的 index.html
+          cp mvp/dashboard.html /tmp/index.html
+
+          # 获取 gh-pages 当前 commit
+          GH_PAGES_SHA=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/git/ref/heads/gh-pages" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin).get('object',{}).get('sha',''))")
+
+          # 创建 blob
+          BLOB_SHA=$(python3 -c "
+          import base64,json,sys
+          with open('/tmp/index.html') as f:
+              content = base64.b64encode(f.read().encode()).decode()
+          print(json.dumps({'content': content, 'encoding': 'base64'}))
+          " | curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/git/blobs" \
+            -d @- | python3 -c "import sys,json; print(json.load(sys.stdin).get('sha',''))")
+
+          # 创建 tree
+          TREE_SHA=$(echo "{\"base_tree\": \"$GH_PAGES_SHA\", \"tree\": [{\"path\": \"index.html\", \"mode\": \"100644\", \"type\": \"blob\", \"sha\": \"$BLOB_SHA\"}]}" | \
+            curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/git/trees" \
+            -d @- | python3 -c "import sys,json; print(json.load(sys.stdin).get('sha',''))")
+
+          # 创建 commit
+          COMMIT_SHA=$(echo "{\"message\": \"📊 每日更新 $(TZ=Asia/Shanghai date +%Y-%m-%d)\", \"tree\": \"$TREE_SHA\", \"parents\": [\"$GH_PAGES_SHA\"]}" | \
+            curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/git/commits" \
+            -d @- | python3 -c "import sys,json; print(json.load(sys.stdin).get('sha',''))")
+
+          # 更新 ref
+          curl -s -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/gh-pages" \
+            -d "{\"sha\": \"$COMMIT_SHA\", \"force\": true}"
+
+          echo "✅ Pages 已更新"
+
+      - name: 提交结果到 main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+
+          git add mvp/data/ mvp/dashboard.html
+
+          if git diff --cached --quiet; then
+            echo "✅ 没有新数据"
+          else
+            git commit -m "📊 每日采集 $DATE [skip ci]"
+            git push
+            echo "✅ 已提交"
+          fi
+
+      - name: 上传分析结果
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-${{ github.run_number }}
+          path: mvp/data/analysis_*.jsonl
+          retention-days: 30
