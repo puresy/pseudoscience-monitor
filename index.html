@@ -490,9 +490,9 @@ footer {
   color: var(--text-secondary);
   margin-top: 4px;
 }
-.source-stat.verified .source-num { color: var(--low); }
-.source-stat.unverified .source-num { color: var(--medium); }
-.source-stat.high-fans .source-num { color: var(--accent); }
+.source-stat.certified .source-num { color: var(--high); }
+.source-stat.unverified .source-num { color: var(--text-dim); }
+.source-stat.high-fans .source-num { color: var(--critical); }
 </style>
 </head>
 <body>
@@ -702,14 +702,14 @@ footer {
   </div>
 </div>
 
-<!-- 3.6 传播信源构成 -->
+<!-- 3.6 传播信源构成 — 注意：认证号在传伪科普 = 更危险，不是更可信 -->
 <div class="section">
   <div class="section-title"><span class="icon">📡</span> 传播信源构成</div>
-  <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">94条伪科普的信源：认证号也在传，意味着传播面更广、误导性更强</p>
+  <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">94条伪科普的信源：认证号≠可信，认证号传播伪科普意味着更大的传播半径和误导面</p>
   <div class="source-overview">
-    <div class="source-stat high-fans">
+    <div class="source-stat certified">
       <div class="source-num">48</div>
-      <div class="source-label">认证号 (51.1%)<br><span style="font-size:10px;color:var(--text-muted);">蓝V/黄V — 带认证标签传播伪科普</span></div>
+      <div class="source-label">认证号 (51.1%)<br><span style="font-size:10px;color:var(--text-muted);">带认证标签传播伪科普，传播面更广</span></div>
     </div>
     <div class="source-stat unverified">
       <div class="source-num">46</div>
